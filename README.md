@@ -13,6 +13,8 @@ You don't need to compile the code yourself!
 
 *(The PDF is automatically generated and updated every time a new change is integrated into the `main` branch).*
 
+If the upper link shows 404, there might be a pending action building the pdf. Just wait a minute.
+
 ## 🤝 How to contribute
 
 We use a simple workflow to keep things organized. Here is how you can add your questions:
