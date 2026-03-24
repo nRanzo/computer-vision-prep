@@ -1,0 +1,65 @@
+\lecture{Lecture 9: Morphological ops and segmentation by thresholding}
+
+\qa{In morphological operations, how does Erosion differ from Dilation in terms of their physical effect on foreground shapes and component connectivity?}{
+\begin{itemize}
+    \item \textbf{Erosion} shrinks or thins foreground objects. It is used to separate weakly connected components, as a pixel is kept only if the structuring element is \textit{fully included} in the object set ($B_z \subseteq A$).
+    \item \textbf{Dilation} expands or thickens foreground objects. It is used to merge close and unconnected components, as a pixel is kept if the structuring element has \textit{at least one pixel overlapping} with the object set ($B_z \cap A \neq \emptyset$).
+\end{itemize}
+}
+
+\qa{Structurally and mathematically, what is the exact difference between an Opening operation versus a Closing operation?}{
+\begin{itemize}
+    \item \textbf{Opening} is defined as an Erosion followed by a Dilation: $A \circ B = (A \ominus B) \oplus B$. 
+    \item \textbf{Closing} is defined as a Dilation followed by an Erosion: $A \bullet B = (A \oplus B) \ominus B$.
+\end{itemize}
+}
+
+\qa{When dealing with imperfect binary images, how does Opening perform versus Closing in terms of noise removal and shape repair?}{
+\begin{itemize}
+    \item \textbf{Opening} is best for ``opening spaces'' in the background: it removes small, bright (white) details or ``salt'' noise that are smaller than the structuring element, smoothing contours without reducing the main object's size.
+    \item \textbf{Closing} is best for ``closing gaps'' in the foreground: it fills in small, dark (black) holes, narrow breaks, or ``pepper'' noise within the white objects, repairing the foreground without increasing the main object's overall size.
+\end{itemize}
+}
+
+\qa{Since morphological operations are not cumulative, when is it appropriate to use [Opening then Closing] versus [Closing then Opening]?}{
+\begin{itemize}
+    \item Use \textbf{Opening then Closing} when the background noise is severe but the main object is relatively sturdy (e.g., a noisy fingerprint). The Opening clears the background ``salt'' noise first so it doesn't get fused to the object, then the Closing patches cracks in the ridges.
+    \item Use \textbf{Closing then Opening} when the main object is highly fragmented or full of holes (e.g., poorly printed dot-matrix text). You must Close first to fuse the broken pieces together; if you Opened first, the initial erosion step would completely erase the fragile object.
+\end{itemize}
+}
+
+\qa{In the context of morphological descriptions, what is the conceptual difference between the image set versus the structuring element?}{
+\begin{itemize}
+    \item The \textbf{image set} is the mathematical representation of the image itself. In the simplest case of a binary image, the image is defined as the set of coordinates containing the foreground pixels. Morphological operators act on this set by adding or removing pixels to/from it.
+    \item The \textbf{structuring element} is the predefined ``probe'' or shape applied to the image. Its specific shape determines the direction(s) and extent to which pixels are added to or removed from the image set.
+\end{itemize}
+}
+
+\qa{When segmenting an image, why might variable thresholding be preferred over global thresholding?}{
+\begin{itemize}
+    \item \textbf{Global thresholding} uses a single threshold value for the entire image, which relies on a clear overall histogram. It often fails when the image suffers from noise or uneven illumination.
+    \item \textbf{Variable (or non-global) thresholding} processes different regions of the image independently, calculating different thresholds for each sub-image. This effectively handles local variations like illumination changes where a single global threshold would fail.
+\end{itemize}
+}
+
+\qa{How does Otsu's method use inter-class variance versus intra-class variance to find the optimal threshold?}{
+Otsu's method automatically evaluates all possible thresholds $k$ to divide the image into two classes. 
+\begin{itemize}
+    \item It aims to \textbf{maximize the inter-class variance} ($\sigma_B^2$), which measures the difference or distance between the two classes. 
+    \item By maximizing the inter-class variance, it simultaneously \textbf{minimizes the intra-class variance} ($\sigma_{in}^2$), because the global variance of the image is fixed ($\sigma_G^2 = \sigma_{in}^2 + \sigma_B^2$). 
+\end{itemize}
+}
+
+\qa{In the context of Otsu's algorithm, what is the conceptual difference between the cumulative mean \texorpdfstring{$m(k)$}{m(k)} and the mean intensity value \texorpdfstring{$m_1(k)$}{m1(k)} for Class 1?}{
+\begin{itemize}
+    \item The \textbf{cumulative mean} $m(k) = \sum_{i=0}^{k} i p_i$ calculates the mean up to intensity level $k$, but it is normalized over the \textit{whole} image.
+    \item The \textbf{mean intensity value} for Class 1, $m_1(k) = \frac{1}{P_1(k)} \sum_{i=0}^{k} i p_i$, takes that cumulative mean and divides it by $P_1(k)$. This normalizes the value specifically to the number of pixels actually belonging to Class 1, giving the true average intensity of that segment.
+\end{itemize}
+}
+
+\qa{How does image noise and object size affect the standard Otsu's method versus an approach that incorporates image smoothing?}{
+\begin{itemize}
+    \item \textbf{Basic Otsu's method} struggles when dealing with noisy images or when target regions are very small (meaning they have a very limited impact on the histogram). Noise blurs the separation between histogram peaks.
+    \item \textbf{Otsu's method with Smoothing} applies a spatial smoothing filter before calculating the histogram. This reduces noise, creates deeper valleys and clearer peaks in the histogram, and allows the algorithm to successfully segment smaller or noisier patterns.
+\end{itemize}
+}
