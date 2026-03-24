@@ -1,0 +1,13 @@
+\section{Lecture 4: Image Filtering and Transformations}
+
+\qa{What is linear image filtering and why is it used?}{
+Linear filtering consists of replacing each pixel with a linear combination of its neighbors. The weights are defined by a matrix called a kernel (or mask). It is mainly used for smoothing (noise reduction), edge detection, and feature extraction.
+}
+
+\qa{Explain the difference between a Box Filter and a Gaussian Filter.}{
+A Box Filter averages all pixels in the neighborhood using equal weights, which can introduce artifacts like ringing. A Gaussian Filter uses weights from a 2D Gaussian distribution, giving more importance to the central pixels and resulting in a smoother blur that better preserves the image's natural structure.
+}
+
+\qa{What is the effect of applying a Sobel operator to an image?}{
+The Sobel operator calculates an approximation of the image gradient. It highlights regions of high spatial frequency, making it an excellent tool for edge detection in both horizontal and vertical directions.
+}
