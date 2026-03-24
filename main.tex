@@ -22,6 +22,8 @@
     \vspace{1em}
     % Create an invisible anchor for hyperref
     \phantomsection
+    % Add a little vertical space in the TOC before each question
+    \addtocontents{toc}{\vspace{0.4em}}
     % Add the question to the Table of Contents as a subsection
     \addcontentsline{toc}{subsection}{#1}
     % Formatting for the question and the answer
