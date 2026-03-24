@@ -19,6 +19,7 @@
 *.snm
 *.toc
 *.toc.old
+*.txt
 *.synctex.gz
 *.synctex.gz(busy)
 *.pdfsync

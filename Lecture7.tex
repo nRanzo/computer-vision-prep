@@ -1,11 +1,11 @@
-\section{Lecture 7: Geometric Transformations and Edge Detection}
+\section{Lecture 7: Filtering in frequency and geometrical transformations}
 
 \qa{A geometric trasform requires two steps. Analyze them.}{
-First is Coordinate transform which is a mathematical operation that works purely on geometrical points to determine their new spatial locations (represented as $x', y' = T(x, y)$). The subsequent step is Image resampling that maps the actual pixel intensity values to the new discrete coordinate grid created by the transform.
+First is Coordinate transform which is a mathematical operation that works purely on geometrical points to determine their new spatial locations (represented as $(x', y') = T(x, y)$). The subsequent step is Image resampling that maps the actual pixel intensity values to the new discrete coordinate grid created by the transform.
 }
 
 \qa{How is a point represented in standard 2D coordinates vs homogeneous coordinates? And what is the structural advantage of using homogeneous coordinates vs standard cartesian ones when performing geometric translations?}{
-In standard 2D coordinates a point is represented by two values $(x, y)$. In homogeneous coordinates an N-dimensional point is transformed into N+1 dimensions using a mathematical trick, which is to map a $(x, y)$ point into a three-coordinate one $(\tilde{x}, \tilde{y}, \tilde{w})$ that can eventually be converted back to standard coordinates by dividing it by the scaling factor $\tilde{w}$ so to get $x = \tilde{x}/\tilde{w}$ and $y = \tilde{y}/\tilde{w}$.
+In standard 2D coordinates a point is represented by two values $(x, y)$. In homogeneous coordinates, an N-dimensional point is mapped into N+1 dimensions. For example, a 2D point $(x, y)$ becomes a three-coordinate vector $(\tilde{x}, \tilde{y}, \tilde{w})$. You can always convert it back to standard coordinates by dividing by the scaling factor $\tilde{w}$, resulting in $x = \tilde{x}/\tilde{w}$ and $y = \tilde{y}/\tilde{w}$.
 In standard coordinates, an affine transformation requires separate linear operations and additions (e.g. multiplying by matrix $A$ and adding translation vector $b$). By switching to homogeneous coordinates, multiple operations (including translation) can be easily combined into a single matrix multiplication.
 }
 
@@ -16,10 +16,4 @@ An Affine transform is a more generic planar transformation that consists of a l
 \qa{When analyzing an image for edges, what is the conceptual difference between using a derivative filter versus a true edge detection algorithm?}{
 Derivative filters are a low-level operation; they simply highlight pixels where intensity changes rapidly. The resulting filtered image still lacks the actual concept of what an edge is.
 Edge detection algorithms, on the other hand, belong to mid-level processing because they mathematically embed the concept or "model" of an edge to actively detect and classify those structural features.
-}
-
-\qa{How do first-order and second-order derivatives differ in their approach to edge detection?}{
-Derivatives are used to detect rapid spatial changes in pixel intensity, which define edges.
-First-order derivatives (like the Sobel or Prewitt operators) compute the gradient of the image. An edge is identified by locating the local maxima (the highest peaks) in the gradient magnitude. The gradient also provides the direction of the edge.
-Second-order derivatives (like the Laplacian) compute the rate of change of the gradient. An edge is identified by locating zero-crossings—the exact point where the second derivative passes through zero. While second-order derivatives are better at pinpointing the exact center of an edge, they are exponentially more sensitive to high-frequency noise.
 }
