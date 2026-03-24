@@ -1,4 +1,4 @@
-# Computer Vision Q&A - Exam Preparation 🎓👁️
+# Computer Vision Q&A - Exam Preparation 🎓
 
 Welcome to the collaborative Q&A repository for the Computer Vision exam! 
 
@@ -13,7 +13,7 @@ You don't need to compile the code yourself!
 
 *(The PDF is automatically generated and updated every time a new change is integrated into the `main` branch).*
 
-If the upper link shows 404, there might be a pending action building the pdf. Just wait a minute.
+If the upper link shows 404, there probably is a pending action building the pdf. Just wait a minute.
 
 ## 🤝 How to contribute
 
