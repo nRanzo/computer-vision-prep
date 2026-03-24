@@ -1,0 +1,51 @@
+# LaTeX build files and auxiliary files
+*.aux
+*.bbl
+*.blg
+*.brf
+*.bcf
+*.cb
+*.dtx
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lol
+*.lot
+*.nav
+*.out
+*.run.xml
+*.snm
+*.toc
+*.toc.old
+*.synctex.gz
+*.synctex.gz(busy)
+*.pdfsync
+*.fdb_latexmk
+*.fls
+*.vrb
+*.spl
+*.dvi
+*.pdf
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE and Editor folders
+.vscode/
+.idea/
+*.swp
+*~
+*.bak
+
+# Build directories (if any local compilations are done out of source)
+build/
+output/

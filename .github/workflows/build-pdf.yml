@@ -23,3 +23,16 @@ jobs:
         with:
           name: Computer-Vision-QA
           path: main.pdf
+
+      - name: Prep for publish
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: mkdir out_pdf && cp main.pdf out_pdf/Computer-Vision-QA.pdf
+
+      - name: Deploy PDF to pdf-build branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out_pdf
+          publish_branch: pdf-build
+          force_orphan: true

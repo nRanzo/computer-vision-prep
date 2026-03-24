@@ -7,10 +7,11 @@ The goal of this project is to build a comprehensive, high-quality PDF containin
 Every time someone contributes, a GitHub Action will automatically compile a new PDF that everyone can download.
 
 ## 📄 How to download the latest PDF
-You don't need to compile the code yourself! To get the latest PDF:
-1. Go to the **Actions** tab.
-2. Click on the latest successful workflow run (marked with a green checkmark).
-3. Scroll down to the **Artifacts** section and click on `Computer-Vision-QA` to download the ZIP containing the PDF.
+You don't need to compile the code yourself!
+
+👉 **[DOWNLOAD THE LATEST PDF HERE](../../raw/pdf-build/Computer-Vision-QA.pdf)** 👈
+
+*(The PDF is automatically generated and updated every time a new change is integrated into the `main` branch).*
 
 ## 🤝 How to contribute
 
@@ -47,4 +48,4 @@ If you want to make sure your LaTeX syntax is correct before submitting:
 If you hold a different opinion on an answer, spot a mistake, or just have a general doubt about a Computer Vision topic, please don't edit someone else's complex mathematical answer directly without checking! 
 Instead, open an **Issue** or start a **Discussion** so we can figure out the right answer together.
 
-Happy studying! 🚀
+Happy studying! 🚀 Start this if helps!

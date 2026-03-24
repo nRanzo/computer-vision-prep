@@ -6,17 +6,17 @@
 \geometry{a4paper, margin=2.5cm}
 \usepackage{xcolor}
 
-% Configurazione hyperref per i link nel PDF
+% Hyperref configuration for PDF links
 \usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
 
-% Definizione del comando \qa{Domanda}{Risposta}
+% Definition of the \qa{Question}{Answer} command
 \newcommand{\qa}[2]{
     \vspace{1em}
-    % Crea un'ancora invisibile per hyperref
+    % Create an invisible anchor for hyperref
     \phantomsection
-    % Aggiunge la domanda all'indice come subsection
+    % Add the question to the Table of Contents as a subsection
     \addcontentsline{toc}{subsection}{#1}
-    % Formattazione della domanda e della risposta
+    % Formatting for the question and the answer
     \noindent\textbf{\textcolor{black!80}{Q: #1}}\par\vspace{0.3em}\noindent
     \textbf{A:} #2\par
     \vspace{1em}
@@ -30,15 +30,16 @@
 
 \maketitle
 
-% Indice cliccabile
+% Clickable Table of Contents
 \tableofcontents
 \newpage
 
-% Importa i file delle lezioni
-% \input{Lecture1-3}
-\input{Lecture4}
-% \input{Lecture5}
-% ... aggiungi qui tutte le altre lezioni ...
+% Import the lecture files
+\input{Lecture1-3}
+\input{Lecture4-5}
+\input{Lecture6}
+\input{Lecture7}
+% ... add all other lectures here ...
 % \input{Lecture26}
 
 \end{document}

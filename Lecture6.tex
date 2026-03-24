@@ -1,0 +1,23 @@
+\section{Lecture 6: Spatial and Frequency Filtering}
+
+\qa{Explain the principle of the median filter and its primary advantage over linear smoothing filters.}{
+The median filter is a non-linear spatial filter that replaces the center pixel of a neighborhood with the median intensity value of the pixels within that window. Its primary advantage over linear filters (like the mean filter) is its superior ability to remove impulse noise (salt \& pepper) without blurring the image excessively. While a mean filter averages the extreme noise values into the surrounding pixels, creating a blur, the median filter discards the extreme outliers, preserving sharp edges and the overall structure of the image.
+}
+
+\qa{How does the Bilateral Filter achieve edge-preserving smoothing, and how does it differ from a standard Gaussian filter?}{
+A standard Gaussian filter smooths an image by computing a weighted average of neighboring pixels based solely on their spatial distance from the center. This reduces noise but blurs edges. The Bilateral Filter is a non-linear, edge-preserving technique that solves this by combining two Gaussian kernels: a spatial (domain) kernel and a range (intensity) kernel.
+The spatial kernel weights pixels based on physical proximity, while the range kernel weights them based on intensity similarity. Consequently, the bilateral filter only averages pixels that are both physically close and similar in brightness, ensuring flat regions are smoothed and preserving sharp intensity transitions / edges.
+}
+
+\qa{In the context of 2D FT, how do low and high frequency translate to the visual components of an image?}{
+When an image is transformed into the frequency domain, its spatial intensity variations are represented as sinusoidal waves of varying frequencies. Low frequencies correspond to areas of the image where pixel intensities change slowly / are constant, i.e. smooth gradients, uniform background / illumination. They contain the vast majority of the image's energy and appearance. High frequencies correspond to areas of rapid intensity transitions i.e. edges, fine details, random noise. Removing high frequencies results in blurring, while emphasizing them sharpens the image.
+}
+
+\qa{Compare ideal LPF and Butterworth LPF (BLPF) in the frequency domain. Why is BLPF generally preferred in practice?}{
+Both filters are used in the frequency domain to attenuate high frequencies and smooth an image, but they differ in their cutoff characteristics. The ideal LPF has an infinitely sharp cutoff radius passing all frequencies below the threshold perfectly and cutting off all the higher frequencies entirely. This truncation causes severe ringing artifacts (concentric ripples) in the resulting spatial image.
+The BLPF introduces a smooth transition between the passed and attenuated frequencies, controlled by the filter's order. Because it avoids a sudden cutoff, it significantly minimizes / completely eliminates the ringing effect -> handy for image restoration.
+}
+
+\qa{How are geometric spatial transformations mathematically represented and applied to an image?}{
+Geometric transformations modify the spatial relationship between pixels (e.g. translating, rotating, scaling, shearing them). They are typically represented using affine transformations via transformation matrices and homogeneous coordinates. It allows us to combine multiple sequential operations, such as scaling an image and then rotating it, into a single composite transformation matrix. This matrix is then multiplied by the original pixel coordinates (x,y) to compute the new spatial locations.
+}

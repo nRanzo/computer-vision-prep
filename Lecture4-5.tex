@@ -1,0 +1,38 @@
+\section{Lecture 4-5: Point Operations and Histograms}
+
+\qa{Define point operations and explain the difference between Logarithmic and Power-Law (Gamma) transformations}{
+Point ops are spatial domain image processing techniques where the new value of a pixel depends strictly on the intensity value of that same pixel in the original image, without considering its neighbors. This is expressed as s = T(r), where r is the original intensity, s is the new intensity, and T is the transformation function.
+
+logarithmic transform $s = c \log(1 + r)$ expands the values of dark pixels while compressing higher-level values. It is primarily used to compress the dynamic range of an image with huge variations in pixel values, such as displaying the FT spectrum.
+
+Power-law / gamma transform $s = cr^\gamma$ is more versatile than the log transform as by altering the gamma value, it can both expand dark regions (when $\gamma < 1$) or expand bright regions (when $\gamma > 1$). It is most commonly used for gamma correction to adjust an image's contrast to match the display specs.
+}
+
+\qa{Compare and contrast "Contrast Stretching" and "Thresholding".}{
+Two techniques that both rely on piecewise-linear transformation functions to manipulate image contrast, but they serve different goals.
+
+Contrast stretching: expands a narrow range of intensity levels in an image to span the full available dynamic range. It is used to correct low-contrast images by making the darks darker and brights brighter, while preserving the relative order of pixel intensities. It is represented as three segments, in which typically the one in middle has a slope coefficient $> 1$ resulting in an image enhancement while the other two have slope coefficient $< 1$ resulting in an image compression.
+
+Thresholding: extreme form of contrast stretching used for image segmentation. It maps all pixel intensities below a specified threshold value to a single dark value (like 0) and all intensities above the threshold to a single bright value (like L-1). Unlike stretching, thresholding irreversibly destroys the original intensity variations, resulting in a binary image.
+}
+
+\qa{What is the main limitation of Histogram Equalization, and why might we use Histogram Specification (Matching) instead?}{
+The primary limitation of Histogram Equalization is that it is a fully automatic, global operation. It aggressively forces the image's histogram to be as flat as possible. While this generally increases contrast, it cannot be controlled. In images with uniform backgrounds or mostly dark/light areas, equalization can artificially enhance background noise or wash out important details.
+
+Histogram Specification / Matching solves this by giving the user control. Instead of forcing a flat histogram, it transforms the original image so that its histogram matches a specific, user-defined target histogram highlighting desired intensity ranges. This is useful for standardizing images from different sensors or preventing the over-enhancement caused by standard equalization.
+}
+
+\qa{Consider image histogram and histogram equalization. A) introduce and detail the concept of img histogram. B) introduce histogram equalization explaining the goal of such process and why it can be useful C) explain the procedure used to evaluate the equalization function and provide an example.}{
+A) An image histogram is a graphical representation of the distribution of pixel intensities in an image. Specifically, it is a bar graph where the x-axis represents the possible intensity values (0 to L-1) and the y-axis represents the frequency (\# pixels) that assume each specific value. It provides a global description of image's appearance, showing if image is well contrasted, over/underexposed, without containing any spatial information about pixels location in the image.
+
+B) Histogram Equalization is an image enhancement technique used to improve the global contrast of an image. It's useful when an image's pixels intensities are concentrated in a narrow range (e.g. under/overexposed images). The goal is to redistribute the pixel intensities so that they are as evenly spread as possible across the entire available spectrum, resulting in a flatter histogram and higher contrast.
+
+C) That's achieved by computing PDF of original image so to find frequencies for all L intensity levels, then deriving CDF, then map original pixel values $r_k$ to new equalized values. By replacing every pixel with a newly mapped value, we generate an image utilizing the full dynamic range.
+}
+
+\qa{Describe the mathematical procedure for performing Histogram Specification.}{
+Histogram Specification involves transforming an input image so its intensity distribution matches a specified target PDF. The procedure consists of 3 main steps:
+1. Equalize the original image: compute the CDF of the original image to find the transformation $s = T(r)$. This maps the original pixels $r$ to equalized values $s$.
+2. Equalize the target histogram: compute CDF of the specified target histogram to find the transformation $v = G(z)$, $z =$ desired output pixel value. This maps the target pixels to equalized values $v$.
+3. Apply the inverse transformation: Since both $s, v$ are equalized (flat) distributions, let's assume $s \approx v$ and compute the inverse of the target transformation, $z = G^{-1}(s)$, and map the equalized pixels $s$ from the first step to their final specified values $z$.
+}
