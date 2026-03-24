@@ -24,30 +24,26 @@ Second-order derivatives (like the Laplacian) compute the rate of change of the 
     \item The \textbf{Canny edge detector} embeds a complex, multi-step mathematical model of what an edge should be. It actively enforces three strict design criteria: a low error rate (via Gaussian smoothing), precise single-point localization (via non-maxima suppression), and continuous contour extraction (via hysteresis thresholding).
 \end{itemize}}
 
-\qa{Cartesian Representation ($y = ax + b$) vs. Normal Representation ($x \cos\theta + y \sin\theta = \rho$)}
-{When building the parameter space for the Hough Transform, why is the normal representation preferred over the standard Cartesian equation?
-\begin{itemize}
+\qa{When building the parameter space for the Hough Transform, why is the normal representation (\texorpdfstring{$x \cos\theta + y \sin\theta = \rho$}{x cos(theta) + y sin(theta) = rho}) preferred over the standard Cartesian equation (\texorpdfstring{$y = ax + b$}{y=ax+b})?}
+{\begin{itemize}
     \item \textbf{Cartesian Representation}: Maps an image point $(x, y)$ to a line $b = -xa + y$ in the $ab$-parameter space. However, it fails to represent vertical lines because their slope ($a$) approaches infinity.
     \item \textbf{Normal Representation}: Solves the vertical line issue by mapping an image point to a bounded sinusoidal curve in the $\rho\theta$-parameter space. This allows the algorithm to gracefully detect lines at any angle.
 \end{itemize}}
 
-\qa{Coarse Quantization (Few Cells) vs. Fine Quantization (Many Cells)}
-{In the Hough Transform algorithm, the parameter space ($\rho$, $\theta$) must be quantized into accumulation cells. What is the engineering trade-off between using few cells versus many cells?
-\begin{itemize}
+\qa{In the Hough Transform algorithm, the parameter space (\texorpdfstring{$\rho$}{rho}, \texorpdfstring{$\theta$}{theta}) must be quantized into accumulation cells. What is the engineering trade-off between using few cells versus many cells?}
+{\begin{itemize}
     \item \textbf{Few Cells (Coarse Quantization)}: Makes the algorithm robust to noise, allowing it to handle pixels that are not perfectly aligned along a mathematical line. The drawback is poor line localization.
     \item \textbf{Many Cells (Fine Quantization)}: Yields very accurate line localization, but requires the edge pixels in the image to be precisely aligned. If they are slightly scattered, they won't accumulate in the same cell, and the line might be missed.
 \end{itemize}}
 
-\qa{Standard Hough Transform vs. Generalized Hough Transform}
-{How does the Generalized Hough Transform differ conceptually from the standard version, and what is its main computational drawback?
-\begin{itemize}
+\qa{How does the Generalized Hough Transform differ conceptually from the standard version, and what is its main computational drawback?}
+{\begin{itemize}
     \item \textbf{Standard Hough Transform}: Detects straight lines by finding intersections in a 2D parameter space (either $ab$ or $\rho\theta$).
     \item \textbf{Generalized Hough Transform}: Extends the concept to find more complex shapes (like circles) using a general equation $g(\boldsymbol{v}, \boldsymbol{c}) = 0$, where $\boldsymbol{v}$ are coordinates and $\boldsymbol{c}$ are coefficients. For example, a circle uses $(x - c_1)^2 + (y - c_2)^2 = c_3^2$. The main drawback is that complex shapes require a parameter space with \textbf{high dimensionality} (e.g., 3 dimensions for a circle), drastically increasing the computational and memory cost.
 \end{itemize}}
 
-\qa{Naive Edge Coupling vs. Hough Transform (Computational Complexity)}
-{Why do we use the Hough Transform instead of a naive approach to find lines?
-\begin{itemize}
+\qa{Why do we use the Hough Transform instead of a naive approach to find lines? (Computational Complexity)}
+{\begin{itemize}
     \item A \textbf{naive approach} would consider all couples of edge points, evaluate the line passing through them, and count the points on that line. This yields a heavy computational complexity of $O(n^3)$ (considering $O(n^2)$ couples plus the comparisons).
     \item The \textbf{Hough Transform} avoids this combinatorics explosion by mapping each edge pixel independently into a parameter space and simply voting (accumulating) in a discrete grid, making line detection highly efficient.
 \end{itemize}}
