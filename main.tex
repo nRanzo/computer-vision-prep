@@ -5,9 +5,17 @@
 \usepackage{geometry}
 \geometry{a4paper, margin=2.5cm}
 \usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amssymb}
 
 % Hyperref configuration for PDF links
 \usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
+
+% Definition of the \lecture command for unnumbered sections in TOC
+\newcommand{\lecture}[1]{
+    \section*{#1}
+    \addcontentsline{toc}{section}{#1}
+}
 
 % Definition of the \qa{Question}{Answer} command
 \newcommand{\qa}[2]{
@@ -39,6 +47,9 @@
 \input{Lecture4-5}
 \input{Lecture6}
 \input{Lecture7}
+\input{Lecture8}
+\input{Lecture9}
+\input{Lecture10}
 % ... add all other lectures here ...
 % \input{Lecture26}
 
