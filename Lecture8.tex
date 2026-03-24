@@ -1,0 +1,7 @@
+\section{Lecture 8: Detecting edges and lines}
+
+\qa{How do first-order and second-order derivatives differ in their approach to edge detection?}{
+Derivatives are used to detect rapid spatial changes in pixel intensity, which define edges.
+First-order derivatives (like the Sobel operator) compute the gradient of the image. An edge is identified by locating the local maxima (the highest peaks) in the gradient magnitude. The gradient also provides the direction of the edge.
+Second-order derivatives (like the Laplacian) compute the rate of change of the gradient. An edge is identified by locating zero-crossings—the exact point where the second derivative passes through zero. While second-order derivatives are better at pinpointing the exact center of an edge, they are exponentially more sensitive to high-frequency noise. Both derivatives amplify noise. For this reason, it's strictly necessary to smooth the image before applying edge detection. The most appropriate and used choice for this is a Gaussian Low-Pass Filter, which has a smooth derivative and it's also the foundation of Canny Edge Detector.
+}
