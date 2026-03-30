@@ -9,8 +9,8 @@
 
 \qa{Structurally and mathematically, what is the exact difference between an Opening operation versus a Closing operation?}{
 \begin{itemize}
-    \item \textbf{Opening} is defined as an Erosion followed by a Dilation: $A \circ B = (A \ominus B) \oplus B$. 
-    \item \textbf{Closing} is defined as a Dilation followed by an Erosion: $A \bullet B = (A \oplus B) \ominus B$.
+    \item \textbf{Opening} is defined mathematically as an Erosion followed by a Dilation: $A \circ B = (A \ominus B) \oplus B$. Structurally, it smooths the contour of an object, breaks narrow isthmuses, and eliminates thin protrusions.
+    \item \textbf{Closing} is defined mathematically as a Dilation followed by an Erosion: $A \bullet B = (A \oplus B) \ominus B$. Structurally, it also smooths contours but does so by fusing narrow breaks and long thin gulfs, eliminating small holes, and filling gaps.
 \end{itemize}
 }
 
@@ -35,19 +35,15 @@
 \end{itemize}
 }
 
-\qa{When segmenting an image, why might variable thresholding be preferred over global thresholding?}{
+\qa{When segmenting an image, why might variable (local) thresholding be preferred over global thresholding?}{
 \begin{itemize}
-    \item \textbf{Global thresholding} uses a single threshold value for the entire image, which relies on a clear overall histogram. It often fails when the image suffers from noise or uneven illumination.
-    \item \textbf{Variable (or non-global) thresholding} processes different regions of the image independently, calculating different thresholds for each sub-image. This effectively handles local variations like illumination changes where a single global threshold would fail.
+    \item \textbf{Global thresholding} applies one single threshold value to the entire image. It works well only if the image has consistent lighting and a uniform background. It fails completely when the image suffers from uneven illumination, shadows, or gradients, because no single threshold can separate the foreground from the background everywhere.
+    \item \textbf{Variable (or local) thresholding} divides the image into smaller sub-regions and calculates a distinct threshold for each specific area based on its local neighborhood. This allows the algorithm to dynamically adapt to local lighting changes, successfully segmenting objects even when the background intensity drifts across the image.
 \end{itemize}
 }
 
 \qa{How does Otsu's method use inter-class variance versus intra-class variance to find the optimal threshold?}{
-Otsu's method automatically evaluates all possible thresholds $k$ to divide the image into two classes. 
-\begin{itemize}
-    \item It aims to \textbf{maximize the inter-class variance} ($\sigma_B^2$), which measures the difference or distance between the two classes. 
-    \item By maximizing the inter-class variance, it simultaneously \textbf{minimizes the intra-class variance} ($\sigma_{in}^2$), because the global variance of the image is fixed ($\sigma_G^2 = \sigma_{in}^2 + \sigma_B^2$). 
-\end{itemize}
+Otsu's method evaluates every possible threshold $k$, computes class probabilities and means, and picks the $k$ that maximizes the inter-class variance $\sigma_B^2$. Since the global variance is fixed ($\sigma_G^2 = \sigma_{in}^2 + \sigma_B^2$), maximizing $\sigma_B^2$ is exactly equivalent to minimizing the intra-class variance $\sigma_{in}^2$, giving the optimal separation between the two classes.
 }
 
 \qa{In the context of Otsu's algorithm, what is the conceptual difference between the cumulative mean \texorpdfstring{$m(k)$}{m(k)} and the mean intensity value \texorpdfstring{$m_1(k)$}{m1(k)} for Class 1?}{
