@@ -3,7 +3,7 @@
 \qa{How do first-order and second-order derivatives differ in their approach to edge detection?}{
 Derivatives are used to detect rapid spatial changes in pixel intensity, which define edges.
 First-order derivatives (like the Sobel operator) compute the gradient of the image. An edge is identified by locating the local maxima (the highest peaks) in the gradient magnitude. The gradient also provides the direction of the edge.
-Second-order derivatives (like the Laplacian) compute the rate of change of the gradient. An edge is identified by locating zero-crossings—the exact point where the second derivative passes through zero. While second-order derivatives are better at pinpointing the exact center of an edge, they are exponentially more sensitive to high-frequency noise. Both derivatives amplify noise. For this reason, it's strictly necessary to smooth the image before applying edge detection. The most appropriate and used choice for this is a Gaussian Low-Pass Filter, which has a smooth derivative and it's also the foundation of Canny Edge Detector.
+Second-order derivatives (like the Laplacian) compute the rate of change of the gradient. An edge is identified by locating zero-crossing: the exact point where the second derivative passes through zero. While second-order derivatives are better at identifying the exact center of an edge, they are exponentially more sensitive to high-frequency noise. Both derivatives amplify noise. For this reason, it's strictly necessary to smooth the image before applying edge detection. The most appropriate and used choice for this is a Gaussian Low-Pass Filter, which has a smooth derivative and it's also the foundation of Canny Edge Detector.
 }
 
 \qa{In the Canny algorithm pipeline, what distinct structural problems do Non-Maxima Suppression and Hysteresis Thresholding solve?}
@@ -26,7 +26,7 @@ Second-order derivatives (like the Laplacian) compute the rate of change of the 
 
 \qa{When building the parameter space for the Hough Transform, why is the normal representation (\texorpdfstring{$x \cos\theta + y \sin\theta = \rho$}{x cos(theta) + y sin(theta) = rho}) preferred over the standard Cartesian equation (\texorpdfstring{$y = ax + b$}{y=ax+b})?}
 {\begin{itemize}
-    \item \textbf{Cartesian Representation}: Maps an image point $(x, y)$ to a line $b = -xa + y$ in the $ab$-parameter space. However, it fails to represent vertical lines because their slope ($a$) approaches infinity.
+    \item \textbf{Cartesian Representation}: Maps an image point $(x, y)$ to a line $b = -xa + y$ in the $ab$-parameter space. It fails to represent vertical lines because their slope ($a$) approaches infinity.
     \item \textbf{Normal Representation}: Solves the vertical line issue by mapping an image point to a bounded sinusoidal curve in the $\rho\theta$-parameter space. This allows the algorithm to gracefully detect lines at any angle.
 \end{itemize}}
 
@@ -42,8 +42,8 @@ Second-order derivatives (like the Laplacian) compute the rate of change of the 
     \item \textbf{Generalized Hough Transform}: Extends the concept to find more complex shapes (like circles) using a general equation $g(\boldsymbol{v}, \boldsymbol{c}) = 0$, where $\boldsymbol{v}$ are coordinates and $\boldsymbol{c}$ are coefficients. For example, a circle uses $(x - c_1)^2 + (y - c_2)^2 = c_3^2$. The main drawback is that complex shapes require a parameter space with \textbf{high dimensionality} (e.g., 3 dimensions for a circle), drastically increasing the computational and memory cost.
 \end{itemize}}
 
-\qa{Why do we use the Hough Transform instead of a naive approach to find lines? (Computational Complexity)}
+\qa{Why do we prefer the Hough Transform over a naive approach to find lines? (Computational Complexity)}
 {\begin{itemize}
-    \item A \textbf{naive approach} would consider all couples of edge points, evaluate the line passing through them, and count the points on that line. This yields a heavy computational complexity of $O(n^3)$ (considering $O(n^2)$ couples plus the comparisons).
+    \item A \textbf{naive approach} would consider all pairs of edge points, evaluate the line passing through them, and count the points on that line. This yields a heavy computational complexity of $O(n^3)$ (considering $O(n^2)$ distinct pairs of points multiplied by a linear check to count the remaining points on the line).
     \item The \textbf{Hough Transform} avoids this combinatorics explosion by mapping each edge pixel independently into a parameter space and simply voting (accumulating) in a discrete grid, making line detection highly efficient.
 \end{itemize}}

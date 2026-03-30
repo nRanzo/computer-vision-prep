@@ -67,4 +67,7 @@ If you want to make sure your LaTeX syntax is correct before submitting:
 If you hold a different opinion on an answer, spot a mistake, or just have a general doubt about a Computer Vision topic, please don't edit someone else's complex mathematical answer directly without checking! 
 Instead, open an **Issue** or start a **Discussion** so we can figure out the right answer together.
 
+## 📄 License
+This project is licensed under the **[CC BY-NC 4.0 License](LICENSE)** (Creative Commons Attribution-NonCommercial 4.0). You are free to share and adapt the material as long as you give appropriate credit and do not use it for commercial purposes.
+
 Happy studying! 🚀 Start this if helps!
