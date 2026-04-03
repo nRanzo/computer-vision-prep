@@ -4,6 +4,9 @@
 \usepackage[T1]{fontenc}
 \usepackage{geometry}
 \geometry{a4paper, margin=2.5cm}
+\usepackage{setspace}
+\setstretch{1.1} % Slightly increases line spacing
+\setlength{\parskip}{0.5em} % Adds space between paragraphs
 \usepackage{xcolor}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -27,9 +30,9 @@
     % Add the question to the Table of Contents as a subsection
     \addcontentsline{toc}{subsection}{#1}
     % Formatting for the question and the answer
-    \noindent\textbf{\textcolor{black!80}{Q: #1}}\par\vspace{0.3em}\noindent
-    \textbf{A:} #2\par
-    \vspace{1em}
+    \noindent\textbf{\textcolor{black!80}{#1}}\par\vspace{0.3em}\noindent
+    #2\par
+    \vspace{2em}
 }
 
 \title{\textbf{Computer Vision - Exam Preparation Q\&A}}
@@ -45,14 +48,14 @@
 \newpage
 
 % Import the lecture files
-\input{Lecture1-3}
-\input{Lecture4-5}
-\input{Lecture6}
-\input{Lecture7}
-\input{Lecture8}
-\input{Lecture9}
-\input{Lecture10}
+\input{Lectures/Lecture1-3}
+\input{Lectures/Lecture4-5}
+\input{Lectures/Lecture6}
+\input{Lectures/Lecture7}
+\input{Lectures/Lecture8}
+\input{Lectures/Lecture9}
+\input{Lectures/Lecture10}
 % ... add all other lectures here ...
-% \input{Lecture26}
+% \input{Lectures/Lecture26}
 
 \end{document}

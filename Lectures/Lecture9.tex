@@ -49,7 +49,7 @@ Otsu's method evaluates every possible threshold $k$, computes class probabiliti
 \qa{In the context of Otsu's algorithm, what is the conceptual difference between the cumulative mean \texorpdfstring{$m(k)$}{m(k)} and the mean intensity value \texorpdfstring{$m_1(k)$}{m1(k)} for Class 1?}{
 \begin{itemize}
     \item The \textbf{cumulative mean} $m(k) = \sum_{i=0}^{k} i p_i$ calculates the mean up to intensity level $k$, but it is normalized over the \textit{whole} image.
-    \item The \textbf{mean intensity value} for Class 1, $m_1(k) = \frac{1}{P_1(k)} \sum_{i=0}^{k} i p_i$, takes that cumulative mean and divides it by $P_1(k)$. This normalizes the value specifically to the number of pixels actually belonging to Class 1, giving the true average intensity of that segment.
+    \item The \textbf{mean intensity value} for Class 1: $$m_1(k) = \frac{1}{P_1(k)} \sum_{i=0}^{k} i p_i$$takes that cumulative mean and divides it by $P_1(k)$. This normalizes the value specifically to the number of pixels actually belonging to Class 1, giving the true average intensity of that segment.
 \end{itemize}
 }
 
