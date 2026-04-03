@@ -1,5 +1,89 @@
 \lecture{Lecture 10: Segmentation by clustering}
 
-\qa{q?}{
-a.
+\qa{Compare region growing with thresholding-based segmentation, and outline the core steps of a basic region growing algorithm.}{
+Standard segmentation criteria rely on either discontinuity (detecting boundaries/edges) or similarity (grouping alike pixels). While standard thresholding groups pixels globally based purely on intensity values without considering spatial relationships, region growing relies on local similarity and connectivity. It groups spatially contiguous pixels that share specific characteristics (intensity, color, texture) into larger regions. Algorithm Workflow:
+\begin{enumerate}
+    \item \textbf{Initialization (Seeds):} Define the input image $f(x,y)$ and a seed array $S(x,y)$ containing 1s at seed locations and 0s elsewhere. If initial masks are obtained via rough heuristics (like global thresholding), each connected component is eroded to a single seed point. This removes the arbitrary shape of the initial mask, ensuring the final region is governed strictly by the growing predicate rather than the initialization method.
+    \item \textbf{Growing Predicate ($Q$):} Define a logical condition enforcing both \textit{spatial connectivity} (e.g., an 8-connected neighborhood) and \textit{similarity}. It evaluates to True (1) if the candidate pixel satisfies both criteria. For example, a common similarity check evaluates whether the pixel's intensity difference from the original seed is within a tolerance $T$: 
+    $$Q(x_i, y_i) = |f(x_i, y_i) - f(x_s, y_s)| \le T$$
+    \item \textbf{Growing Process:} Iteratively evaluate neighbors of the current region. If predicate $Q$ is true, the pixel is appended to the region (creating a support image $f_Q$). 
+    \item \textbf{Stopping Rule:} The region stops growing when no more neighboring pixels satisfy the predefined merging criteria. 
+    \item \textbf{Output:} The final image $f_G$ is generated, where each connected component is assigned a distinct region label.
+\end{enumerate}
+}
+
+\qa{Explain the core principle of Watershed segmentation.}{
+The algorithm models a grayscale image (or its gradient magnitude) as a 3D topographic surface, where pixel intensity equals elevation. 
+\begin{itemize}
+    \item Flooding begins from local minima, forming expanding \textbf{catchment basins}.
+    \item When water from distinct basins threatens to merge, a "dam" is mathematically constructed. 
+    \item The set of all dams constitutes the \textbf{watershed lines}, which serve as the final and fully connected segmentation boundaries.
+\end{itemize}
+}
+
+\qa{What is the primary failure mode of Watershed segmentation, and what is the standard algorithmic enhancement used to resolve it?}{
+Direct application on real-world images almost always causes severe oversegmentation. Image noise and minor local surface irregularities generate numerous spurious local minima, resulting in a highly fractured segmentation map comprised of tiny, useless regions. The standard solution is to abandon raw local minima and instead initiate flooding exclusively from a robust set of predefined \textbf{markers}.
+\begin{itemize}
+    \item \textbf{Preprocessing:} The image is typically smoothed to suppress noise-induced variations.
+    \item \textbf{Internal Markers:} Confirmed regions representing the actual objects of interest (e.g., prominent local minima surrounded by lighter pixels).
+    \item \textbf{External Markers:} Regions firmly classified as the background.
+\end{itemize}
+By restricting the flooding seed points to these curated markers, the algorithm outputs a controlled number of meaningful, macroscopic regions.
+}
+
+\qa{Define the objective function of the K-means clustering algorithm and outline the standard iterative optimization approach (Lloyd's algorithm).}{
+K-means aims to partition pixel feature vectors into $k$ disjoint sets $C_1, \dots, C_k$ with centroids $\mu_i$, minimizing the intra-cluster variance (Sum of Squared Errors) made by approximating points with their cluster centers:
+$$ \min \left( \sum_{i=1}^k \sum_{\vec{x} \in C_i} d(\vec{x}, \mu_i) \right) $$
+where $d(\cdot)$ is an appropriate distance metric. Because an exhaustive search is computationally unfeasible, a heuristic approach is required. Lloyd's Algorithm does iterative optimization:
+\begin{enumerate}
+    \item \textbf{Initialization:} Select $k$ initial centroids. Common heuristics include the \textit{Forgy method} (randomly select $k$ actual data points, ensuring centroids start within the dataset distribution) or \textit{Random partition} (randomly assign all points to clusters then compute initial centroids).
+    \item \textbf{Assignment:} Associate each feature vector $\vec{x}$ to the closest centroid: 
+    $$C_i = \{\vec{x} : i = \text{argmin}_j d(\vec{x}, \mu_j)\}$$
+    \item \textbf{Update:} Compute the new centroids as the center of mass (mean) of the associated points: 
+    $$\mu_i = \frac{1}{|C_i|} \sum_{\vec{x} \in C_i} \vec{x}$$
+    \item \textbf{Termination:} Repeat assignment and update steps until a termination condition is achieved (centroids do not sensibly move, or a maximum step limit is reached). 
+    \item \textbf{Output Visualization:} In the final segmented image, every pixel in a given cluster is typically reassigned the \textbf{mean intensity/color} of its respective cluster centroid.
+\end{enumerate}
+}
+
+\qa{Critically evaluate the structural assumptions of K-means segmentation, and analyze the trade-offs of including spatial coordinates in the feature vector versus using color/intensity alone.}{
+Algorithmic Weaknesses \& Assumptions:
+\begin{itemize}
+    \item \textbf{Non-Optimality:} The heuristic guarantees fast convergence, but only to a local minimum. The output is strictly dependent on the initialization.
+    \item \textbf{Rigid Parameters:} The exact number of clusters ($k$) must be known/provided in advance.
+    \item \textbf{Geometric Bias (Spherical Symmetry):} The algorithm assumes data is evenly distributed around the centroid within a certain radius. It is mathematically incapable of accurately capturing real-world data structures that form elongated, non-convex, or highly irregular shapes in the feature space.
+\end{itemize}
+
+Feature Vector Composition Trade-offs:
+\begin{itemize}
+    \item \textbf{Color/Intensity Only:} Segmented clusters will contain pixels that are \textbf{not necessarily spatially connected components} (e.g., similar objects on opposite sides of an image group together). It also fails critically on textured objects with high local variance (like cabbage), resulting in meaningless, highly fragmented clusters.
+    \item \textbf{Color + Position ($x,y$):} Appending spatial coordinates enforces local compactness, vastly improving the separation of physically distinct objects. \textbf{Trade-off:} Large, homogeneous background regions will be artificially fractured into multiple distinct clusters simply because the spatial distance from a single centroid grows too large to minimize the objective function efficiently.
+\end{itemize}
+}
+
+\qa{Explain the conceptual foundation of density-based clustering using Kernel Density Estimation and outline how it theoretically addresses K-means' limitations.}{
+While K-means forms clusters based on the shortest distance to a calculated centroid (forcing spherical symmetry and requiring a predefined $k$), density-based clustering defines clusters as areas of high data point density separated by areas of lower density.
+
+To find these areas, the algorithm constructs a continuous Probability Density Function (PDF) from the discrete pixel data using \textbf{Kernel Density Estimation (Parzen Window Technique)}:
+\begin{enumerate}
+    \item \textbf{Kernel Placement:} A chosen kernel function (e.g., Uniform, Gaussian/Normal, Epanechnikov) of radius $r$ is centered on every single sample point $\vec{x}_i$ in the dataset.
+    \item \textbf{Summation (Convolution):} The individual kernel contributions are summed across the feature space, blending the distributions to create a single, smooth global density estimate curve.
+    \item \textbf{Mode Seeking:} The algorithm then identifies the \textbf{modes} (the major peaks or local maxima) of this synthesized PDF. Each mode corresponds to a cluster center. All regions of the input space that "climb" toward the same peak are assigned to that specific cluster.
+\end{enumerate}
+
+This approach theoretically solves major K-means flaws because it does not force arbitrary spherical shapes (clusters conform to the natural data topography), and the number of clusters is discovered organically based on the number of peaks found, rather than being guessed in advance.
+}
+
+\qa{Formally define the mathematical construction of a Probability Density Function using Kernel Density Estimation, and explain the primary computational drawback of this method.}{
+Given $N$ input samples $\vec{x}_i$ in an $n$-dimensional feature space, the estimated density function $f(\vec{x})$ evaluated at a generic point $\vec{x}$ is defined as the sum of translated kernels:
+$$ f(\vec{x}) = \frac{1}{N r^n} \sum_{i=1}^N K(\vec{x} - \vec{x}_i) = \frac{c_k}{N r^n} \sum_{i=1}^N k\left(\frac{||\vec{x} - \vec{x}_i||^2}{r^2}\right) $$
+Where:
+\begin{itemize}
+    \item $K(\cdot)$ is the specific kernel function (which must integrate to 1).
+    \item $k(\cdot)$ is the 1-dimensional profile generating the kernel.
+    \item $r$ is the kernel radius (bandwidth), controlling the smoothness of the estimation.
+    \item The factor $r^n$ normalizes the equation by the number of dimensions to ensure the resulting PDF integrates to 1.
+\end{itemize}
+
+While theoretically robust, explicitly constructing and evaluating this global density function $f(\vec{x})$ everywhere across an $n$-dimensional feature space is \textbf{computationally highly complex and inefficient}. Calculating the contribution of every data point to every other coordinate in the space makes direct density function processing generally impractical for high-resolution image segmentation, necessitating alternative methods for finding peaks (like Mean Shift).
 }
