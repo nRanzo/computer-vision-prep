@@ -1,0 +1,113 @@
+\lecture{Lecture 11: Mean Shift and introduction to features}
+
+\qa{How does Mean Shift differ from standard classification or regression in real-world ML systems?}{
+\begin{itemize}
+    \item \textbf{Different Objective:} Classification and regression are \textbf{Supervised Learning} tasks that predict labels or values. Mean Shift is an \textbf{Unsupervised Learning} clustering algorithm used to discover hidden structures (high-density modes) in unlabeled data.
+    \item \textbf{Complementary Role:} It is not a replacement for supervised models. Real-world CV systems use complex pipelines that layer unsupervised methods (like Mean Shift for segmentation) together with supervised classifiers and feature engineering.
+\end{itemize}
+}
+
+\qa{Why does the Mean Shift algorithm evaluate the density gradient rather than computing the full PDF?}{
+Calculating the full density function across a high-dimensional feature space is computationally intractable and fundamentally unnecessary if the goal is only to find peaks.
+
+Mean Shift acts as a steepest-ascent optimization method. By computing only the gradient of the density field, the algorithm directly obtains the vector pointing to the local maximum (the mode). It bypasses the global PDF computation entirely.
+}
+
+\qa{What is the mathematical decomposition of the density gradient \texorpdfstring{$\nabla f_k(x)$}{Nabla f\_k(x)}, and what is its structural purpose in the Mean Shift algorithm?}{
+In the formal derivation of Mean Shift, the kernel density gradient $\nabla f_k(x)$ is algebraically factored into three distinct terms, as $\nabla f_k(x) = A \cdot f_g(x) \cdot m_g(x)$, where:
+    \begin{enumerate}
+        \item $A = \frac{2c_k}{r^2 c_g}$ is the \textbf{constant term} establishing the scaling factor based on kernel profiles.
+        \item $f_g(x) = \frac{c_g}{N r^n} \sum_{i=1}^N g(y_i)$ is the \textbf{kernel density estimator} evaluated at $x$, measuring the absolute magnitude of the local data density.
+        \item $m_g(x) = \left[ \frac{\sum_{i=1}^N x_i g(y_i)}{\sum_{i=1}^N g(y_i)} - x \right]$ is the \textbf{mean shift vector}.
+    \end{enumerate}
+\textbf{Structural Purpose:} This factorization directly isolates the spatial translation vector $m_g(x)$. By demonstrating that the gradient $\nabla f_k(x)$ is strictly proportional to $m_g(x)$ (since $A$ and $f_g(x)$ are both strictly positive scalars), it mathematically proves that calculating the local weighted center of mass inherently yields a vector pointing in the steepest-ascent direction. This elegantly eliminates the need to explicitly compute complex derivatives at runtime.
+}
+
+\qa{From an algorithmic perspective, why is the calculation of the mean shift vector restricted to a local window rather than processing all \texorpdfstring{$N$}{N} data points in the feature space?}{
+The algorithm utilizes kernel functions (e.g., Epanechnikov or truncated Gaussian) that possess a finite extension governed by the window size parameter $r$.
+
+Mathematically, any data point outside this radial distance yields a weight of exactly zero in the profile derivative $g(y_i)$. Therefore, restricting the calculation to only the points within the window is not an approximation. It yields the exact local gradient while drastically dropping the computational cost of a single step from $O(N)$ (evaluating the whole dataset) to $O(W)$, where $W$ is the smaller number of points inside the local neighborhood.
+}
+
+\qa{How does Mean Shift fundamentally differ from K-Means in defining clusters and structural assumptions?}{
+\begin{itemize}
+    \item \textbf{K-Means}: Requires a strictly predefined hyperparameter $k$ (the number of clusters), structurally assumes that clusters are spherical, and is highly sensitive to both its random initialization and spatial outliers (since it minimizes global variance).
+    \item \textbf{Mean Shift}: Resolves these flaws. It does not assume spherical clusters, does not require knowing $k$ a priori, and avoids initialization instability. Furthermore, because it relies on local density estimation rather than global variance, it is highly robust to outliers—it does not distort cluster boundaries to accommodate scattered noise.
+    \item \textbf{Cluster Definition (Topological):} Mean Shift conceptualizes the feature distribution as a density function where clusters are defined by local maxima ("hills"). It defines an \textbf{attraction basin}: all data points whose gradient trajectories (hill-climbing) terminate at the exact same local mode constitute a single cluster. The number of clusters found depends entirely on the underlying data distribution and the chosen kernel window size $r$.
+\end{itemize}
+}
+
+\qa{The iterative procedure stops when the gradient is close to 0. How does Mean Shift differentiate between a true mode and a saddle point, given both have a zero-gradient?}{
+Saddle Points are zero-gradient locations, but they are structurally unstable. To prevent the algorithm from halting at a saddle point instead of a true peak, Mean Shift introduces a small mathematical \textbf{perturbation}. Because the saddle point is an unstable equilibrium, a microscopic random shift will easily push the kernel window off the plateau, causing the steepest-ascent gradient to become non-zero and allowing the trajectory to resume moving freely toward a true mode.
+}
+
+\qa{What are the failure modes of choosing an inappropriate kernel window size (\texorpdfstring{$r$}{r}) in Mean Shift, and what are its general computational drawbacks?}{
+Mean Shift relies heavily on a single primary hyperparameter: the kernel extension or window size $r$ (bandwidth).
+\begin{itemize}
+    \item \textbf{Window too small ($r$ is small)}: The algorithm becomes highly sensitive to local noise and outliers, resulting in extreme over-segmentation (finding vastly more modes than actual objects).
+    \item \textbf{Window too large ($r$ is large)}: The kernel over-smooths the density space. Distinct peaks merge into single, broad attraction basins, causing distinct objects/modes to be erroneously clustered together (under-segmentation). 
+    \item \textbf{Computational Complexity}: Regardless of $r$, the algorithm is computationally expensive compared to standard K-Means. It requires repeatedly calculating distances and evaluating the kernel function across points, and it does not scale well with the dimensionality of the feature space or massive dataset sizes.
+\end{itemize}
+}
+
+\qa{In Mean Shift image segmentation, how does the joint spatial-color kernel govern region coherence, edge preservation, and texture flattening?}{
+Mean Shift operates in a joint feature space by multiplying two independent kernels:
+$$K(x) = c_k \cdot k_s \left( \frac{x_s}{r_s} \right) \cdot k_r \left( \frac{x_r}{r_r} \right)$$
+\begin{itemize}
+    \item \textbf{Region Coherence (spatial + range VS range only):} Segmenting solely on intensity/color results in spatially disconnected clusters (e.g., pixels on opposite sides of an image merging into the same segment just because they share the same dark shadow intensity). Incorporating the \textbf{spatial kernel} ($k_s$) enforces strict local coherence. During the hill-climbing process, a pixel's trajectory is only influenced by neighboring pixels that are close \textit{both} physically (within $r_s$) \textit{and} chromatically (within $r_r$).
+    \item \textbf{Edge Preservation (discontinuities):} Structural boundaries are exceptionally well-preserved compared to standard linear filters (like a basic Gaussian). If a pixel sits exactly on a sharp edge, the spatial window overlaps both sides, but the \textbf{range kernel} ($k_r$) acts as a hard mathematical filter assigning zero weight to pixels across the boundary (if their color difference exceeds $r_r$). Therefore, the shift vector is only pulled by pixels on the \textit{same side} of the edge. The trajectory effectively runs parallel to the discontinuity, aggressively smoothing interior textures (painterly effect) while keeping the boundary contrast intact.
+    \item \textbf{Parameter Trade-offs (\texorpdfstring{$r_s$}{r\_s} vs. \texorpdfstring{$r_r$}{r\_r}):} 
+    \begin{itemize}
+        \item Increasing the \textbf{color window} ($r_r$) aggressively flattens distinct textures, merging varied chromatic gradients into solid, uniform blocks.
+        \item Increasing the \textbf{spatial window} ($r_s$) forces the algorithm to bridge larger physical distances, generating broader geometric regions. However, the boundaries between these large regions will remain perfectly crisp as long as the color tolerance ($r_r$) is kept strictly small. A small $r_r$ ensures the algorithm still refuses to blur different colors together. If $r_r$ is also increased, the algorithm will merge regions across color boundaries, destroying the edges.
+    \end{itemize}
+\end{itemize}
+}
+
+\qa{How is the standard feature extraction and matching pipeline structured conceptually?}{
+The pipeline operates as a sequence of strictly dependent stages:
+\begin{enumerate}
+    \item \textbf{Feature Detection (Upstream):} The initial step that identifies stable, geometric points of interest.
+    \item \textbf{Feature Description (Middle):} Computes mathematical signatures (feature vectors) for the previously detected points.
+    \item \textbf{Feature Matching or Feature Tracking (Downstream):} These are downstream tasks because they cannot function without the descriptor vectors generated by the previous steps. They establish relationships by comparing those descriptors.
+\end{enumerate}}
+
+\qa{What is the structural difference between feature detection and feature description in the computer vision pipeline?}{
+\begin{itemize}
+    \item \textbf{Feature Detection:} The process of identifying locally distinct, structurally stable geometric points (keypoints) across an image (\textit{where} to look).
+    \item \textbf{Feature Description:} The extraction of a high-dimensional mathematical vector (a signature) representing the visual properties of the local patch surrounding the keypoint (\textit{how to identify} the point later).
+\end{itemize}}
+
+
+\qa{What are the distinct engineering requirements for an ideal keypoint (detector) versus an ideal descriptor?}{
+    \begin{itemize}
+    \item An \textbf{ideal keypoint} must be geometrically reliable. It requires precise localization, high repeatability, \textbf{invariance} to geometric transformations (scale, rotation), and insensitivity to photometric (illumination) changes.
+    \item An \textbf{ideal descriptor} must be highly distinctive yet compact. It requires mathematically \textbf{robustness} against:
+    \begin{itemize}
+        \item \textbf{Occlusions:} Partial obstruction of the target patch.
+        \item \textbf{Clutter:} Dense, distracting backgrounds or overlapping structures.
+        \item \textbf{Degradations:} Sensor noise, motion blur, and compression artifacts.
+    \end{itemize}
+\end{itemize}}
+
+\qa{How is the stability (Repeatability Score) of a keypoint detector mathematically quantified when comparing a pair of images?}{
+\begin{itemize}
+    \item Stability is measured using a \textbf{repeatability score}. Given two images of the same scene, it is the ratio between the successfully matched ground-truth point pairs and the theoretical maximum possible matches:
+    $$ \text{Repeatability} = \frac{\text{Number of corresponding keypoints detected in both images}}{\min(N_1, N_2)} $$
+    where $N_1$ and $N_2$ are the total number of keypoints detected in Image 1 and Image 2, respectively. A higher score indicates a more stable and reliable detector.
+\end{itemize}}
+
+\qa{According to the feature pipeline, what distinguishes feature matching from feature tracking?}{
+Both processes are subsequent stages in the pipeline that rely fundamentally on \textbf{feature description} to find similar descriptors, differing primarily in their search domains:
+\begin{itemize}
+    \item \textbf{Feature Matching (Global Search):} Establishes correspondences between vastly different images by globally comparing descriptors, typically minimizing a distance metric (e.g., Euclidean distance) in the high-dimensional feature space.
+    \item \textbf{Feature Tracking (Local Search):} Establishes temporal correspondences across consecutive video frames. It exploits temporal continuity and local spatial proximity, heavily restricting the search area to a small neighborhood around the keypoint's previous location.
+\end{itemize}}
+
+\qa{What are the primary higher-level CV tasks that rely on feature detection and matching/tracking pipelines?}
+{
+\begin{itemize}
+    \item \textbf{Motion Estimation:} Using feature tracking matrices across frames to compute camera ego-motion or optical flow.
+    \item \textbf{Image Stitching:} Using feature matching to compute homographies, aligning overlapping photos to construct panoramic mosaics.
+    \item \textbf{3D Reconstruction:} Triangulating matched features across multiple 2D viewpoints (epipolar geometry) to calculate depth maps and construct 3D models.
+\end{itemize}}

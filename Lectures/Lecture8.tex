@@ -24,6 +24,18 @@ Second-order derivatives (like the Laplacian) compute the rate of change of the 
     \item The \textbf{Canny edge detector} embeds a complex, multi-step mathematical model of what an edge should be. It actively enforces three strict design criteria: a low error rate (via Gaussian smoothing), precise single-point localization (via non-maxima suppression), and continuous contour extraction (via hysteresis thresholding).
 \end{itemize}}
 
+\qa{Does the Canny algorithm use block filters to speed up edge orientation evaluation?}{
+No. The algorithm computes gradients $g_x$ and $g_y$ using standard derivative masks. The true computational optimization in this step comes from angle quantization. The continuous angle $\theta$ is snapped to one of four discrete directional bins ($0^\circ, 45^\circ, 90^\circ, 135^\circ$). This allows the subsequent Non-Maxima Suppression to only perform scalar comparisons with predefined nearest neighbors in a $3 \times 3$ grid, avoiding complex floating-point geometry.
+}
+
+\qa{What are the 3 hyperparameters of the Canny edge detector?}
+{Note that Canny is a deterministic algorithm, not a machine learning model, so it does not have trainable weights. Instead, it possesses three configurable hyperparameters that must be manually tuned based on the specific application:
+\begin{itemize}
+    \item $\sigma$ (Gaussian kernel size): controls the scale of edges detected and noise smoothing.
+    \item $T_H$ (High Threshold): determines the minimum gradient magnitude for a strong, guaranteed edge pixel.
+    \item $T_L$ (Low Threshold): determines the tolerance for connecting weak edge pixels to strong ones during hysteresis.
+\end{itemize}}
+
 \qa{When building the parameter space for the Hough Transform, why is the normal representation (\texorpdfstring{$x \cos\theta + y \sin\theta = \rho$}{x cos(theta) + y sin(theta) = rho}) preferred over the standard Cartesian equation (\texorpdfstring{$y = ax + b$}{y=ax+b})?}
 {\begin{itemize}
     \item \textbf{Cartesian Representation}: Maps an image point $(x, y)$ to a line $b = -xa + y$ in the $ab$-parameter space. It fails to represent vertical lines because their slope ($a$) approaches infinity.
