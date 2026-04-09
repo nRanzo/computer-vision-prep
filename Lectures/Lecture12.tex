@@ -1,1 +1,164 @@
-\lecture{Lecture 12: Detecting corners and blobs, SIFT}
+\lecture{Lecture 12: Harris corners and SIFT}
+
+\qa{In the Harris Corner Detector, how do the eigenvalues ($\lambda_0, \lambda_1$) of the auto-correlation matrix (structure tensor) $A$ mathematically classify the local image patch?}
+{
+\begin{itemize}
+    \item The matrix $A$ describes the variance of spatial gradients (data spread) within the local patch along its principal directions.
+    \item \textbf{Flat/Uniform Region:} Both $\lambda_0$ and $\lambda_1$ are small. Moving the patch in any spatial direction produces little to no change in the local intensity.
+    \item \textbf{Edge:} One eigenvalue is large, and the other is small. Displacement perpendicular to the edge causes a massive change, but displacement along the edge causes almost no change.
+    \item \textbf{Corner:} Both $\lambda_0$ and $\lambda_1$ are large. Any spatial displacement $(\Delta x, \Delta y)$ in any direction produces a significant intensity change.
+\end{itemize}
+}
+
+\qa{Why does the Harris algorithm evaluate the response function $R = \det(A) - \alpha \cdot \text{trace}(A)^2$ instead of directly extracting the exact eigenvalues $\lambda_0$ and $\lambda_1$?}
+{Computing exact eigenvalues involves solving a characteristic polynomial, which requires computationally expensive square root operations for every single pixel in the image. 
+
+The Harris response $R$ mathematically bypasses this by exploiting properties of matrix invariants: $\det(A) = \lambda_0 \lambda_1$ and $\text{trace}(A) = \lambda_0 + \lambda_1$. This allows for highly efficient classification:
+\begin{itemize}
+    \item $R$ is \textbf{significantly positive}: Indicates a corner (the product of the two large eigenvalues dominates).
+    \item $R$ is \textbf{significantly negative}: Indicates an edge (one large eigenvalue drives up the trace penalty squared, pushing the overall value negative).
+    \item $|R|$ is \textbf{close to zero}: Indicates a flat region (both eigenvalues are negligible).
+\end{itemize}
+}
+
+\qa{What are the theoretical invariances of the Harris corner detector, and what is its primary geometric failure mode?}
+{
+\begin{itemize}
+    \item \textbf{Invariant to Translation and Rotation:} Image gradients simply shift with translation, and the eigenvalues of the auto-correlation matrix are intrinsically rotation-invariant.
+    \item \textbf{Invariant to Additive Brightness Offset:} Because the matrix relies exclusively on numerical spatial derivatives ($\nabla I_x, \nabla I_y$), adding a uniform brightness constant $I(x,y) + c$ identically vanishes during derivation.
+    \item \textbf{Not Invariant to Scaling (Failure Mode):} If an image is heavily magnified, a sharp geometric angle will stretch out and appear as a localized smooth edge or a flat curve to the detector. Since the algorithm evaluates a fixed-size analysis window, it fundamentally fails to recognize scaled-up corners.
+\end{itemize}
+}
+
+\qa{How does the USAN/SUSAN detector fundamentally differ from the Harris detector regarding computational logic and noise robustness?}
+{
+\begin{itemize}
+    \item \textbf{Harris (Derivative-based):} Computes partial spatial derivatives to build an auto-correlation matrix. While mathematically rigorous, numerical differentiation inherently amplifies high-frequency image noise.
+    \item \textbf{USAN/SUSAN (Derivative-free):} Evaluates a circular mask and simply counts the number of pixels possessing an intensity similar to the central "nucleus" pixel (i.e., calculating the USAN area). 
+    \begin{itemize}
+        \item If USAN area $\approx$ full mask: Uniform region.
+        \item If USAN area $\approx$ half mask: Edge.
+        \item If USAN area significantly $<$ half mask: Corner (Smallest USAN).
+    \end{itemize}
+    Because SUSAN replaces numerical differentiation with thresholded integration (counting similar pixels), it is structurally far more robust to image noise.
+\end{itemize}
+}
+
+\qa{What is the structural difference between a corner feature (e.g., Harris) and a blob feature like MSER (Maximally Stable Extremal Regions)?}
+{
+\begin{itemize}
+    \item \textbf{Harris corners} focus on highly localized \textbf{specific 0D points} (pure coordinates, no spatial extension). Unlike an edge, an exact corner has zero dimensions: moving even a fraction of a pixel means you are no longer on the corner.
+    \item Other features focus on \textbf{blobs}. A blob is a contiguous \textbf{2D region} where internal properties are (approximately) constant, yet strictly different from surrounding background regions. Because they possess measurable physical area, you can move locally within the boundaries of a blob and still remain inside the same feature.
+\end{itemize}
+
+\textbf{MSER (Maximally Stable Extremal Regions)} are specific connected areas characterized by almost uniform intensity, making the MSER feature detector function as a powerful blob detector. The core idea is based on two properties:
+\begin{itemize}
+    \item \textbf{"Extremal"} refers to a \textbf{structural (order-based) property}: a region is extremal if all its pixels are strictly brighter or darker than its boundary. It does not measure how large the difference is, only that a consistent ordering exists.
+    \item \textbf{"Maximally Stable"} refers to a \textbf{dynamic (multi-threshold) property}: among all extremal regions obtained by sweeping intensity thresholds, the algorithm selects those whose area remains nearly unchanged across thresholds. Stability is defined by minimal relative variation in region size.
+\end{itemize}
+
+\textbf{In short:}
+\begin{itemize}
+    \item \textbf{Harris corners} $\rightarrow$ mathematical 0D points with no physical extension.
+    \item \textbf{MSER blobs} $\rightarrow$ specialized, physically extensive 2D regions where:
+    \begin{itemize}
+        \item \textbf{Extremal} $\rightarrow$ defines valid regions via intensity ordering (internal vs boundary).
+        \item \textbf{Maximally Stable} $\rightarrow$ selects regions that persist across threshold changes.
+    \end{itemize}
+\end{itemize}
+}
+
+
+
+\qa{How does the SIFT algorithm construct the scale space, and what is the strict mathematical relationship governing the smoothing parameter \texorpdfstring{$\sigma$}{sigma} within and across octaves?}
+{
+\begin{itemize}
+    \item SIFT organizes the scale space into discrete blocks called \textbf{octaves}. 
+    \item \textbf{Within an octave:} The image resolution remains constant. The image is progressively blurred using a Gaussian filter. For an octave divided into $s$ intervals, the smoothing parameter $\sigma$ is multiplied by a constant factor $k = 2^{1/s}$ at each step.
+    \item \textbf{Across octaves:} Instead of continuously increasing the filter size (which is computationally prohibitive), the image is \textbf{downsampled} (its resolution is halved). The next octave then re-applies the exact same base Gaussian filters to the smaller image, effectively doubling $\sigma$ relative to the original image dimensions.
+\end{itemize}
+}
+
+\qa{Why does SIFT rely on the Difference of Gaussians (DoG) rather than computing the true Laplacian of Gaussian (LoG) for feature detection?}
+{
+\begin{itemize}
+    \item The \textbf{LoG filter} ($\nabla^2 G(x,y)$) optimally combines smoothing and second-order derivatives to isolate high spatial frequencies (edges and corners) across scales. However, explicitly computing the second-order derivative matrix for every pixel at every scale is computationally expensive.
+    \item The \textbf{DoG filter} $D(x, y, \sigma)$ is calculated simply by subtracting two consecutively smoothed images within the same octave. Mathematically, the heat diffusion equation proves that DoG is a highly accurate, computationally cheap approximation of the scale-normalized LoG ($\sigma^2 \nabla^2 G$), achieving the same zero-crossing and isotropic detection capabilities.
+\end{itemize}
+}
+
+\qa{What is the exact volumetric neighborhood evaluated to identify a candidate keypoint in the DoG scale space?}
+{
+Keypoints in SIFT are not detected in a flat 2D image, but as extrema in a \textbf{3D scale-space volume} $(x, y, \sigma)$, where $x,y$ are spatial coordinates and $\sigma$ is the scale (blur level). Think of the DoG as a 3D scalar field where keypoints are simply peaks or valleys.
+
+A candidate pixel is tested by comparing its DoG intensity to a $3 \times 3 \times 3$ cube centered on it, resulting in exactly \textbf{26 spatial-scale neighbors} (the center pixel itself is excluded):
+\begin{itemize}
+    \item \textbf{8 neighbors} in the current DoG layer (same scale $\sigma$).
+    \item \textbf{9 neighbors} in the DoG layer immediately above (scale $\sigma + \Delta$).
+    \item \textbf{9 neighbors} in the DoG layer immediately below (scale $\sigma - \Delta$).
+\end{itemize}
+
+\textbf{Selection Criterion (3D Extremum Test):}
+The pixel is selected if and only if its value is \textit{strictly greater} (local maximum) or \textit{strictly less} (local minimum) than all 26 neighbors. 
+
+This matters as it enforces simultaneous locality in both space and scale. It ensures the point is not only distinctive in its 2D spatial neighborhood, but also that the structure exists at a specific, characteristic scale. Detecting extrema in a scale-space function rather than just "corners in an image" is what fundamentally gives SIFT its \textbf{scale invariance} and robustness to zoom.
+}
+
+\qa{Since digital images are discrete grids, how does SIFT achieve the high positional accuracy required for precise feature matching?}
+{
+\begin{itemize}
+    \item The discrete maximum found by the 26-neighbor check is an approximation. SIFT achieves \textbf{subpixel location accuracy} by applying a 3D Taylor series expansion to the DoG scale-space function. 
+    \item By calculating the derivative and setting it to zero, the algorithm interpolates the continuous peak of the 3D quadratic function, yielding the exact subpixel (and sub-scale) coordinates of the extremum.
+\end{itemize}
+}
+
+\qa{After finding local extrema, SIFT aggressively discards certain points. How is the Hessian matrix utilized to reject false keypoints?}
+{
+\begin{itemize}
+    \item Local extrema in the DoG space often trigger strongly along straight structural edges. These points are highly unstable to noise and suffer from the aperture problem (poor localization along the edge axis).
+    \item To eliminate them, SIFT evaluates local principal curvatures using the \textbf{Hessian matrix} of the DoG image (computed using finite differences): 
+    $$H = \begin{bmatrix} D_{xx} & D_{xy} \\ D_{yx} & D_{yy} \end{bmatrix}$$
+    \item Using the ratio of the eigenvalues ($\lambda_1, \lambda_2$), the algorithm tests the structural shape without explicitly computing the roots:
+    \begin{itemize}
+        \item If one eigenvalue is much larger than the other ($\lambda_1 \gg \lambda_2$), the local curvature is flat in one direction (an \textbf{edge}). The point is discarded.
+        \item If both eigenvalues are large and comparable, the point represents a highly curved \textbf{corner}. The point is kept.
+    \end{itemize}
+    \item \textit{Note:} SIFT also independently discards low-contrast points where the absolute DoG response is below a threshold (e.g., $|D(\hat{x})| < 0.03$).
+\end{itemize}
+}
+
+\qa{How does SIFT determine the dominant orientation of a keypoint to achieve rotation invariance?}
+{
+\begin{itemize}
+    \item SIFT evaluates the gradient magnitude $M(x,y)$ and direction $\theta(x,y)$ for every pixel in a local circular neighborhood around the keypoint (the size of this neighborhood is strictly proportional to the keypoint's detected scale $\sigma$).
+    \item A histogram of gradient orientations is constructed with 36 bins (10 degrees per bin). Crucially, each pixel's contribution is weighted by its gradient magnitude \textbf{and} a Gaussian weighting function (to give less importance to pixels far from the center).
+    \item The highest peak in this histogram represents the dominant local direction. To achieve sub-bin accuracy, a parabola is fitted to the 3 bins closest to the peak to interpolate the exact orientation angle. The descriptor's coordinate system is subsequently rotated to align with this angle.
+\end{itemize}
+}
+
+\qa{How does the SIFT algorithm handle local neighborhoods that exhibit multiple strong gradient directions?}
+{
+\begin{itemize}
+    \item While building the orientation histogram, SIFT evaluates secondary peaks alongside the absolute maximum.
+    \item If any secondary peak has a magnitude strictly greater than $80\%$ of the highest peak, the algorithm generates a completely \textbf{new keypoint}.
+    \item This newly created keypoint shares the exact same spatial coordinates $(x, y)$ and scale $(\sigma)$ as the original, but is assigned the orientation of the secondary peak. This prevents ambiguous descriptor matching at complex junctions or corners.
+\end{itemize}
+}
+
+\qa{What is the exact geometric and mathematical breakdown used to construct the 128-dimensional SIFT descriptor?}
+{
+\begin{itemize}
+    \item A $16 \times 16$ pixel neighborhood around the keypoint is extracted at the correct scale and rotated to match the dominant orientation computed previously.
+    \item This entire $16 \times 16$ grid is overlaid with a Gaussian weighting window (to smoothly downweight edges) and then subdivided into sixteen smaller $4 \times 4$ sub-regions.
+    \item For each $4 \times 4$ sub-region, an 8-bin histogram of gradient orientations is computed (grouping directions into 45-degree increments).
+    \item Concatenating the histograms from all 16 sub-regions yields exactly $16 \times 8 = 128$ dimensions. This forms a highly distinctive, spatially-structured gradient signature.
+\end{itemize}
+}
+
+\qa{Why is the final 128-dimensional descriptor vector both normalized and explicitly thresholded (capped) at a value of 0.2?}
+{
+\begin{itemize}
+    \item \textbf{Normalization:} The entire 128-element vector is normalized to unit length. This mathematically cancels out linear illumination changes (e.g., uniform shifts in image contrast, since gradients already cancel out uniform brightness shifts).
+    \item \textbf{Thresholding (Capping at 0.2):} Global normalization fails against non-linear illumination effects (e.g., harsh specular reflections, camera saturation, or stark shadows) which create localized, massive gradient spikes. By capping any single vector component at a maximum value of $0.2$, and subsequently re-normalizing the vector, SIFT prevents these localized lighting artifacts from dominating the entire descriptor and skewing the matching distance.
+\end{itemize}
+}
