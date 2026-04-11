@@ -27,10 +27,22 @@
     \item \textbf{Re-weighting mechanism:} After each round, training examples that were misclassified by the current weak learner have their weights exponentially increased, while correctly classified examples are down-weighted. This forces the subsequent weak classifiers in the next round to mathematically prioritize correcting previous mistakes. The final strong classifier is the sign of the weighted sum of all chosen weak learners: $h(x) = \text{sign}\left(\sum_{j=1}^{T} \alpha_j h_j(x)\right)$.
 \end{itemize}}
 
-\qa{What is the structural logic of the Viola-Jones Cascade, and how does it simultaneously enforce error asymmetry and drastically reduce computational cost?}
+\qa{What is the structural logic of the Viola-Jones cascade, and how does it enforce error asymmetry while drastically reducing computational cost?}
 {
 \begin{itemize}
-    \item The cascade arranges weak classifiers into sequential, increasingly complex stages (e.g., Stage 1 uses 1 feature, Stage 2 uses 10 features, etc.). A sliding window must pass \textit{every} stage to be classified as a face; if it fails any stage, it is instantly rejected and computation halts.
-    \item \textbf{Computational Efficiency (Early Rejection):} Because the vast majority of sliding windows in an image only contain background, the cascade is designed to reject them as early as possible. Rejecting a background patch in Stage 1 (using just 1 feature) requires almost zero computation, saving the system from evaluating thousands of features on empty space. The complex, computationally expensive later stages are strictly reserved for the rare, challenging face-like regions.
-    \item \textbf{Error Asymmetry:} A \textbf{False Positive} in an early stage is highly acceptable because subsequent, stricter stages are designed to filter it out. Conversely, a \textbf{False Negative} is fatal because if a true face is rejected early, it drops out of the pipeline and can never be recovered. Therefore, early stages are aggressively tuned for near 100\% recall (detecting all faces) at the heavy expense of precision.
+    \item The cascade arranges weak classifiers into sequential, increasingly complex stages (e.g., Stage 1 uses 1 feature, Stage 2 uses 10 features). A sliding window must pass \textit{every} stage to be classified as a face; if it fails any stage, it is instantly rejected and computation halts.
+    \item \textbf{Computational Efficiency (Early Rejection):} Since most sliding windows are purely background, the cascade rejects them extremely early. Rejecting a background patch in Stage 1 requires almost zero computation, saving the system from evaluating thousands of features on empty space. The complex later stages are strictly reserved for rare face-like regions.
+    \item \textbf{Error Asymmetry:} A \textbf{False Positive} at an early stage is acceptable because stricter stages later on will filter it out. Conversely, a \textbf{False Negative} is fatal: if a true face is rejected early, it vanishes from the pipeline forever. Thus, early stages are aggressively tuned for near 100\% recall (catching all possible faces) at the heavy expense of precision.
+\end{itemize}}
+
+\qa{What visual cues does the Viola-Jones detector capture, and how do local Haar patterns relate to human facial components?}
+{
+\begin{itemize}
+    \item Haar features capture broad, high-contrast intensity differences between adjacent regions rather than fine textures. For human faces, these differences naturally arise from the 3D structure of the face casting predictable shadows under normal lighting.
+    \item The original paper notes that AdaBoost autonomously selected these specific geometric cues as the most universally distinctive. The first two features are:
+    \begin{enumerate}
+        \item A \textbf{vertical two-rectangle feature} measuring the difference between the \textbf{eye region} (which is darker due to \textbf{structural eye socket shadows}) and the \textbf{upper cheeks} (which protrude and catch light).
+        \item A \textbf{horizontal three-rectangle feature} (side-by-side) contrasting the darker \textbf{eyes} on the exterior against the brighter, protruding \textbf{bridge of the nose} in the center.
+    \end{enumerate}
+    \item \textbf{Vulnerability \& Bias:} Since these features rely on structural 3D shadows rather than textures, they assume standard top-down lighting. If a dark-skinned person with light eyes under flat lighting breaks this intensity gradient, the first stage may output a negative response. Rejecting this at Stage 1 triggers an immediate, unrecoverable \textbf{False Negative} (causing the known racial and lighting biases in early systems).
 \end{itemize}}
