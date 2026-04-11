@@ -1,2 +1,31 @@
 \lecture{Lecture 14: tbd}
 
+\qa{Why is the sliding window approach computationally daunting for face detection, and what two absolute design imperatives must the Viola-Jones architecture satisfy to overcome this?}
+{
+\begin{itemize}
+    \item The sliding window must evaluate all spatial locations across multiple scales, resulting in millions of candidate patches per image.
+    \item Since the vast majority of these patches are non-faces, the architecture must achieve two things to be viable: 1) \textbf{extremely fast processing} to rapidly discard non-face background patches, and 2) a \textbf{very low false positive rate} to prevent the sheer volume of background windows from overwhelming the final output.
+\end{itemize}}
+
+\qa{How are Haar features mathematically evaluated, and what is the engineering trade-off regarding their structural coarseness?}
+{
+\begin{itemize}
+    \item Haar features compute the scalar difference between the sum of pixel intensities in adjacent rectangular regions: 
+    $$f(x) = \sum_i p_{black}(i) - \sum_i p_{white}(i)$$
+    \item \textbf{Trade-off:} Haar features are structurally coarse; they can only capture simple gradients like horizontal/vertical edges or bars. However, because their geometry is strictly rectangular, they can be computed in $O(1)$ time using an \textbf{integral image}. This massive computational efficiency perfectly compensates for their lack of fine structural detail.
+\end{itemize}}
+
+\qa{Given an intractable pool of \texorpdfstring{$\sim$}{\textasciitilde}160,000 possible Haar features in a \texorpdfstring{$24 \times 24$}{24x24} window, how does AdaBoost construct a strong classifier and force the algorithm to learn difficult edge cases?}
+{
+\begin{itemize}
+    \item AdaBoost sequentially selects the single best "weak learner" at each iteration. A weak classifier evaluates a single Haar feature $f_j(x)$, optimized with a threshold $\theta_j$ and a parity $p_j$ (direction of the inequality):
+    $$h_j(x) = \begin{cases} 1 & \text{if } p_j f_j(x) > p_j \theta_j \\ -1 & \text{otherwise} \end{cases}$$
+    \item \textbf{Re-weighting mechanism:} After each round, training examples that were misclassified by the current weak learner have their weights exponentially increased, while correctly classified examples are down-weighted. This forces the subsequent weak classifiers in the next round to mathematically prioritize correcting previous mistakes. The final strong classifier is the sign of the weighted sum of all chosen weak learners: $h(x) = \text{sign}\left(\sum_{j=1}^{T} \alpha_j h_j(x)\right)$.
+\end{itemize}}
+
+\qa{What is the structural logic of the Viola-Jones Cascade, and why does it enforce a strict asymmetry between False Positives and False Negatives?}
+{
+\begin{itemize}
+    \item The cascade arranges weak classifiers into sequential, increasingly complex stages (e.g., Stage 1 uses 1 feature, Stage 2 uses 10 features, etc.). A sliding window must pass \textit{every} stage to be classified as a face; if it fails any stage, it is instantly rejected and computation halts.
+    \item \textbf{Error Asymmetry:} A \textbf{False Positive} in an early stage is highly acceptable because subsequent, stricter stages are designed to filter it out. Conversely, a \textbf{False Negative} is fatal because if a true face is rejected at Stage 1, it drops out of the pipeline and can never be recovered. Therefore, early stages are aggressively tuned for near 100\% recall (detecting all faces) at the heavy expense of precision.
+\end{itemize}}
