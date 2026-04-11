@@ -7,11 +7,15 @@
     \item Since the vast majority of these patches are non-faces, the architecture must achieve two things to be viable: 1) \textbf{extremely fast processing} to rapidly discard non-face background patches, and 2) a \textbf{very low false positive rate} to prevent the sheer volume of background windows from overwhelming the final output.
 \end{itemize}}
 
-\qa{How are Haar features mathematically evaluated, and what is the engineering trade-off regarding their structural coarseness?}
+\qa{How are Haar features mathematically defined and evaluated, and what is the engineering trade-off regarding their structural coarseness?}
 {
 \begin{itemize}
-    \item Haar features compute the scalar difference between the sum of pixel intensities in adjacent rectangular regions: 
-    $$f(x) = \sum_i p_{black}(i) - \sum_i p_{white}(i)$$
+    \item A Haar feature is fundamentally defined as the strictly coupled combination of a \textbf{function} and a \textbf{geometry}:
+    \begin{itemize}
+        \item \textbf{Function:} The mathematical operation $f(x)$, which is the scalar difference between the sum of pixel intensities in adjacent "black" and "white" rectangular regions:
+        $$f(x) = \sum_i p_{black}(i) - \sum_i p_{white}(i)$$
+        \item \textbf{Geometry:} The specific spatial layout (e.g., 2-rectangle, 3-rectangle), scale (width and height), and discrete position of those rectangles within the evaluation window.
+    \end{itemize}
     \item \textbf{Trade-off:} Haar features are structurally coarse; they can only capture simple gradients like horizontal/vertical edges or bars. However, because their geometry is strictly rectangular, they can be computed in $O(1)$ time using an \textbf{integral image}. This massive computational efficiency perfectly compensates for their lack of fine structural detail.
 \end{itemize}}
 
@@ -23,9 +27,10 @@
     \item \textbf{Re-weighting mechanism:} After each round, training examples that were misclassified by the current weak learner have their weights exponentially increased, while correctly classified examples are down-weighted. This forces the subsequent weak classifiers in the next round to mathematically prioritize correcting previous mistakes. The final strong classifier is the sign of the weighted sum of all chosen weak learners: $h(x) = \text{sign}\left(\sum_{j=1}^{T} \alpha_j h_j(x)\right)$.
 \end{itemize}}
 
-\qa{What is the structural logic of the Viola-Jones Cascade, and why does it enforce a strict asymmetry between False Positives and False Negatives?}
+\qa{What is the structural logic of the Viola-Jones Cascade, and how does it simultaneously enforce error asymmetry and drastically reduce computational cost?}
 {
 \begin{itemize}
     \item The cascade arranges weak classifiers into sequential, increasingly complex stages (e.g., Stage 1 uses 1 feature, Stage 2 uses 10 features, etc.). A sliding window must pass \textit{every} stage to be classified as a face; if it fails any stage, it is instantly rejected and computation halts.
-    \item \textbf{Error Asymmetry:} A \textbf{False Positive} in an early stage is highly acceptable because subsequent, stricter stages are designed to filter it out. Conversely, a \textbf{False Negative} is fatal because if a true face is rejected at Stage 1, it drops out of the pipeline and can never be recovered. Therefore, early stages are aggressively tuned for near 100\% recall (detecting all faces) at the heavy expense of precision.
+    \item \textbf{Computational Efficiency (Early Rejection):} Because the vast majority of sliding windows in an image only contain background, the cascade is designed to reject them as early as possible. Rejecting a background patch in Stage 1 (using just 1 feature) requires almost zero computation, saving the system from evaluating thousands of features on empty space. The complex, computationally expensive later stages are strictly reserved for the rare, challenging face-like regions.
+    \item \textbf{Error Asymmetry:} A \textbf{False Positive} in an early stage is highly acceptable because subsequent, stricter stages are designed to filter it out. Conversely, a \textbf{False Negative} is fatal because if a true face is rejected early, it drops out of the pipeline and can never be recovered. Therefore, early stages are aggressively tuned for near 100\% recall (detecting all faces) at the heavy expense of precision.
 \end{itemize}}
