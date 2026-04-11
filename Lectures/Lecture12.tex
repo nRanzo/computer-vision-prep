@@ -1,6 +1,6 @@
 \lecture{Lecture 12: Harris corners and SIFT}
 
-\qa{In the Harris Corner Detector, how do the eigenvalues ($\lambda_0, \lambda_1$) of the auto-correlation matrix (structure tensor) $A$ mathematically classify the local image patch?}
+\qa{In the Harris Corner Detector, how do the eigenvalues (\texorpdfstring{$\lambda_0, \lambda_1$}{lambda0, lambda1}) of the auto-correlation matrix (structure tensor) \texorpdfstring{$A$}{A} mathematically classify the local image patch?}
 {
 \begin{itemize}
     \item The matrix $A$ describes the variance of spatial gradients (data spread) within the local patch along its principal directions.
@@ -10,7 +10,7 @@
 \end{itemize}
 }
 
-\qa{Why does the Harris algorithm evaluate the response function $R = \det(A) - \alpha \cdot \text{trace}(A)^2$ instead of directly extracting the exact eigenvalues $\lambda_0$ and $\lambda_1$?}
+\qa{Why does the Harris algorithm evaluate the response function \texorpdfstring{$R = \det(A) - \alpha \cdot \text{trace}(A)^2$}{R = det(A) - alpha * trace(A)\textasciicircum 2} instead of directly extracting the exact eigenvalues \texorpdfstring{$\lambda_0$}{lambda0} and \texorpdfstring{$\lambda_1$}{lambda1}?}
 {Computing exact eigenvalues involves solving a characteristic polynomial, which requires computationally expensive square root operations for every single pixel in the image. 
 
 The Harris response $R$ mathematically bypasses this by exploiting properties of matrix invariants: $\det(A) = \lambda_0 \lambda_1$ and $\text{trace}(A) = \lambda_0 + \lambda_1$. This allows for highly efficient classification:
@@ -83,7 +83,7 @@ The Harris response $R$ mathematically bypasses this by exploiting properties of
 {
 \begin{itemize}
     \item The \textbf{LoG filter} ($\nabla^2 G(x,y)$) optimally combines smoothing and second-order derivatives to isolate high spatial frequencies (edges and corners) across scales. However, explicitly computing the second-order derivative matrix for every pixel at every scale is computationally expensive.
-    \item The \textbf{DoG filter} $D(x, y, \sigma)$ is calculated simply by subtracting two consecutively smoothed images within the same octave. Mathematically, the heat diffusion equation proves that DoG is a highly accurate, computationally cheap approximation of the scale-normalized LoG ($\sigma^2 \nabla^2 G$), achieving the same zero-crossing and isotropic detection capabilities.
+    \item The \textbf{DoG filter} $D(x, y, \sigma)$ is calculated simply by subtracting two consecutively smoothed images within the same octave. In SIFT, images are already computed at multiple scales by Gaussian smoothing within each octave. The Difference of Gaussians naturally arises as the difference between adjacent levels in this scale space, making it an efficient way to approximate the scale-normalized Laplacian without explicitly computing second-order derivatives. Mathematically, the heat diffusion equation proves that DoG is a highly accurate, computationally cheap approximation of the scale-normalized LoG ($\sigma^2 \nabla^2 G$), achieving the same zero-crossing and isotropic detection capabilities.
 \end{itemize}
 }
 

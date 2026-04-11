@@ -1,0 +1,96 @@
+\lecture{Lecture 13: tbd}
+
+\qa{How does PCA-SIFT alter the standard SIFT descriptor calculation, and why does the patch size strictly shrink from \texorpdfstring{$41 \times 41$}{41x41} to \texorpdfstring{$39 \times 39$}{39x39}?}
+{
+\begin{itemize}
+    \item PCA-SIFT retains the first three steps of SIFT (detection, scale, orientation) but fundamentally changes the descriptor extraction. It extracts a $41 \times 41$ pixel patch centered on the keypoint and rotated to the canonical orientation.
+    \item Instead of building 8-bin orientation histograms, it computes the raw horizontal and vertical gradients for the patch. 
+    \item The bounding pixels are strictly discarded (reducing the patch to $39 \times 39$) because calculating a discrete spatial derivative requires comparing a pixel to its neighbors, which is mathematically impossible for pixels on the outermost edge.
+    \item The horizontal and vertical gradients are concatenated into a massive vector ($2 \times 39 \times 39 = 3042$ dimensions). This vector is normalized and then projected onto a lower-dimensional linear space using \textbf{Principal Component Analysis (PCA)} to maximize variance while drastically reducing the descriptor's footprint.
+\end{itemize}}
+
+\qa{How does SURF utilize integral images and box filters to achieve its significant speed advantage over SIFT's Hessian matrix computation?}
+{
+\begin{itemize}
+    \item \textbf{Integral Image:} An intermediate representation $I_\Sigma(x,y)$ where each pixel value is the sum of all pixels in the rectangle defined by the origin and $(x,y)$. This allows the sum of intensities inside \textit{any} arbitrary rectangular image area to be computed in $O(1)$ time using just four array references (e.g., $A + D - B - C$).
+    \item \textbf{Box Filters:} SURF approximates the computationally heavy second-order Gaussian derivatives (for the Hessian matrix) using simple rectangular "box filters" composed of discrete black (negative weight) and white (positive weight) rectangles.
+    \item Because these box filters are purely rectangular sums, they are computed instantly using the integral image, completely decoupling the processing time from the actual size of the filter.
+\end{itemize}}
+
+\qa{What is the structural difference in how the scale space pyramid is constructed in SURF compared to SIFT?}
+{
+\begin{itemize}
+    \item \textbf{SIFT:} Iteratively smooths the image with a Gaussian filter and then physically downsamples (reduces the resolution of) the image to build the next octave.
+    \item \textbf{SURF:} Never subsamples the original image. Instead of shrinking the image, SURF \textbf{up-scales the filter size}. It applies progressively larger box filters directly to the original-resolution integral image. Because integral image lookups are $O(1)$, applying a massive box filter costs the exact same computational time as a small one, eliminating the need for iterative image resizing.
+\end{itemize}}
+
+\qa{How does SURF determine the dominant keypoint orientation without computing exact, continuous image gradients?}
+{
+\begin{itemize}
+    \item SURF evaluates a circular neighborhood of radius $6s$ ($s$ = scale). 
+    \item It approximates the $x$ and $y$ gradients extremely fast using \textbf{Haar wavelets} (simple binary black/white filters).
+    \item The responses are plotted on a 2D $(x,y)$ plane. A sliding wedge of $60^\circ$ sweeps around the origin, summing the wavelet responses within it. The angle of the wedge that yields the highest total sum is assigned as the dominant keypoint orientation.
+\end{itemize}}
+
+\qa{What is the mathematical composition of the final SURF descriptor, and what is its primary engineering trade-off compared to SIFT?}
+{
+\begin{itemize}
+    \item \textbf{Composition:} SURF extracts a square region around the keypoint (sized $20s \times 20s$, where $s$ is the scale) aligned with the dominant orientation, and divides it into a $4 \times 4$ spatial grid of sub-regions (16 total). For each sub-region, instead of 8-bin histograms, SURF computes a simple 4-dimensional vector using Haar wavelet responses: $v = (\sum d_x, \sum d_y, \sum |d_x|, \sum |d_y|)$. 
+    \item Concatenating these 16 sub-regions yields a $16 \times 4 = \textbf{64-dimensional descriptor}$ (exactly half the size of standard SIFT).
+    \item \textbf{Trade-off:} SURF achieves drastically faster computation and matching times due to integral images and a smaller descriptor vector. However, it is structurally \textbf{less robust} to extreme illumination variations and viewpoint (perspective) changes compared to SIFT.
+\end{itemize}}
+
+\qa{How does the Gradient Location-Orientation Histogram (GLOH) alter SIFT's spatial grid, and how does it manage the resulting dimensionality explosion?}
+{
+\begin{itemize}
+    \item GLOH modifies the descriptor calculation step by replacing SIFT's Cartesian $4 \times 4$ grid with a \textbf{log-polar location grid}. This grid consists of 3 radial distance bins and 8 angular bins (leaving the central base bin un-subdivided, resulting in $1 + 8 + 8 = 17$ spatial bins).
+    \item Like SIFT, it computes 16 gradient orientations per spatial sub-region. This geometry creates $17 \times 16 = 272$ total orientation bins (a massive vector).
+    \item To remain computationally competitive and remove redundant correlations, GLOH applies \textbf{Principal Component Analysis (PCA)} to strictly project the 272-dimensional vector down to a 128-dimensional space, matching SIFT's descriptor size but capturing radial spatial layouts more effectively.
+\end{itemize}}
+
+\qa{What is the mathematical basis of the Shape Context descriptor, and what critical limitation led to its obsolescence?}
+{
+\begin{itemize}
+    \item It quantizes relative point locations into a \textbf{2D} log-polar coordinate system (5 radial bins, 12 angular bins). \textbf{For clarity}: while the spatial layout is 2D, the descriptor builds a \textbf{3D} histogram by additionally accumulating the \textbf{edge orientations} (e.g., extracted via Canny) as the third dimension, counting the discrete number of edge points falling into each bin.
+    \item Scale invariance is achieved by normalizing all radial distances by the mean distance between points.
+    \item \textbf{Fatal Flaw:} While robust to noise and minor deformations, it is strictly \textbf{dependent on rotations}. It lacks native rotation invariance, making it highly brittle to viewpoint changes compared to modern descriptors.
+\end{itemize}}
+
+\qa{How does LBP encode local image patches, and what is its primary architectural advantage?}
+{
+\begin{itemize}
+    \item LBP compares a central pixel's intensity to its 8 immediate neighbors. Using a thresholding function: if the neighbor is strictly greater than the center, it outputs 1; otherwise, 0.
+    \item This generates an 8-bit binary sequence (converted to a simple integer). Histograms of these values are concatenated across sub-regions.
+    \item \textbf{Advantage:} It is incredibly \textbf{compact} and does not strictly require a standalone keypoint detector. It can be applied densely across an entire image or bounding box (originally designed for robust text and texture recognition).
+\end{itemize}}
+
+\qa{How does BRIEF structurally differ from gradient-histogram descriptors like SIFT, and why is it vastly faster to match?}
+{
+\begin{itemize}
+    \item Instead of accumulating continuous gradient vectors, BRIEF (Binary Robust Independent Elementary Features) applies Gaussian smoothing and directly compares the raw intensities of randomly sampled pixel pairs $(x,y)$ inside a window.
+    \item It utilizes a binary test: $\tau(p; x,y) = 1$ if $p(x) < p(y)$, otherwise $0$. These binary results are concatenated into a single bitstring.
+    \item \textbf{Speed Trade-off:} Because the descriptor is purely binary, feature matching relies on the \textbf{Hamming distance} (counting differing bits via a hardware-level XOR operation). This is computationally exponentially faster than calculating the Euclidean distance of floating-point vectors required by SIFT/SURF.
+\end{itemize}}
+
+\qa{What components make up the ORB algorithm, and how does it geometrically fix the main limitation of the BRIEF descriptor?}
+{
+\begin{itemize}
+    \item ORB (Oriented FAST and Rotated BRIEF) fuses the highly efficient \textbf{FAST corner detector} with the \textbf{BRIEF descriptor}.
+    \item Standard BRIEF is entirely rotation-dependent; if the image rotates, the fixed pixel-pair sampling fails.
+    \item ORB fixes this by computing the \textbf{intensity centroid} of the keypoint neighborhood. The vector from the geometric center to the intensity centroid defines a dominant orientation. ORB then explicitly rotates the BRIEF pixel-pair sampling coordinates to align with this axis, creating a rotation-invariant binary descriptor.
+\end{itemize}}
+
+\qa{In feature space matching strategies, why is Nearest Neighbor Distance Ratio (NNDR) generally superior to simple Nearest Neighbor (NN)?}
+{
+\begin{itemize}
+    \item \textbf{Simple NN} finds the mathematically closest descriptor in feature space but requires a hard, arbitrary global distance threshold to reject bad matches.
+    \item \textbf{NNDR} evaluates the ratio between the distance to the absolute best match ($d_1$) and the second-best match ($d_2$). 
+    \item If $d_1 \approx d_2$, it indicates an ambiguous feature (e.g., repeating patterns like windows on a building). NNDR dynamically filters out these structurally ambiguous matches without relying on a rigid distance threshold, keeping only highly distinct matches where $d_1 \ll d_2$.
+\end{itemize}}
+
+\qa{How do Precision and Recall mathematically and conceptually evaluate the quality of a feature matching pipeline?}
+{
+\begin{itemize}
+    \item \textbf{Precision} ($TP / (TP + FP)$) measures \textit{exactness}: out of all the matches the algorithm claimed were correct, what fraction were genuinely correct? It heavily penalizes False Positives (wrongly matched features).
+    \item \textbf{Recall} ($TP / (TP + FN)$) measures \textit{completeness}: out of all the true physical correspondences that actually exist in the scene, what fraction did the algorithm successfully detect? It penalizes False Negatives (missed true matches).
+\end{itemize}}
