@@ -1,0 +1,105 @@
+\lecture{Lecture 16: tbd}
+
+\qa{In a cv pipeline, how do the structural outputs fundamentally differ between Classification + Localization, Object Detection, and Instance Segmentation?}{
+\begin{itemize}
+    \item \textbf{Classification + Localization:} Assumes a single dominant object per image. It outputs one categorical label and one bounding box (4 coordinates: $x, y, w, h$).
+    \item \textbf{Object Detection:} Relaxes the single-object assumption. It outputs an arbitrary number of bounding boxes, each coupled with a specific class label, allowing for multiple instances and clutter.
+    \item \textbf{Instance Segmentation:} Drops the bounding box abstraction entirely. It computes exact pixel-level masks for every distinct object instance, effectively combining object detection with semantic segmentation boundaries.
+\end{itemize}}
+
+\qa{Why is rigid template matching via a sliding window fundamentally brittle when deployed in unconstrained real-world environments?}{
+A template is a fixed 2D array of pixels. It lacks native invariance to scale, rotation, translation, viewpoint changes, and illumination variations.
+
+Even if geometric transforms are perfectly corrected, rigid templates fundamentally fail on intra-class variations (e.g., the structural differences between a wooden stool and a soft recliner, despite both being "chairs"). No simple affine transformation maps the geometry of one distinct object to another within the same semantic class.
+}
+
+\qa{Under what photometric conditions do SSD and SAD fail, and how does ZNCC mathematically mitigate this?}
+{
+Both SSD and SAD evaluate raw intensity differences. If the target image undergoes a uniform linear illumination shift (e.g., adding a brightness constant), the absolute pixel values diverge drastically, causing the match to fail despite perfect structural alignment.
+
+Zero-mean Normalized Cross-Correlation explicitly corrects this:
+$$ \phi(x,y) = \frac{\sum_{u,v \in T} (I(x+u, y+v) - \bar{I}(x,y))(T(u,v) - \bar{T})}{\sigma_I(x,y) \sigma_T} $$
+By subtracting the local window mean ($\bar{I}$) and the template mean ($\bar{T}$), it centers the distributions at zero, canceling out uniform brightness shifts. By dividing by the standard deviations ($\sigma_I, \sigma_T$), it normalizes contrast.
+
+This makes ZNCC stronger to illumination changes when compared with SSD and SAD, but it still might be problematic under particular lightning situations.
+}
+
+\qa{If ZNCC is too computationally expensive, how does a classical cv pipeline physically manipulate the data to cope with illumination, scale, and rotation changes in template matching?}
+{
+\begin{itemize}
+    \item \textbf{Illumination:} Instead of matching raw intensities, convert both the image and the template into \textbf{edge maps} (or gradient orientations). Gradients measure local intensity changes, natively filtering out uniform, low-frequency illumination shifts.
+    \item \textbf{Scale:} The system must brute-force the search space by either matching against a pre-computed bank of \textbf{several scaled versions} of the template, or by building an image pyramid and testing the fixed template across \textbf{multiple rescaled copies} of the target image.
+    \item \textbf{Rotation:} Similarly requires matching the target against a generated bank of \textbf{several rotated versions} of the rigid template.
+\end{itemize}}
+
+\qa{How does the Generalized Hough Transform conceptually act as a form of template matching, and what is its dimensionality trade-off?}
+{
+Instead of sliding a dense matrix of pixels, the GHT mathematically models a complex shape using a general equation $g(\vec{v}, \vec{c}) = 0$, where $\vec{v}$ are spatial coordinates and $\vec{c}$ are shape coefficients. Edge pixels in the image "vote" in the parameter space to locate the template.
+
+Be aware of the trade-off, as while it removes the spatial sliding window, it suffers from the curse of dimensionality. The more complex the shape (requiring degrees of freedom for scale, rotation, etc.), the higher the dimensionality of the parameter vector $\vec{c}$, making the accumulator space exponentially heavier to compute and threshold.
+}
+
+\qa{What is the exact sequence of operations used to compute a Histogram of Oriented Gradients (HOG) descriptor?}
+{\begin{enumerate}
+    \item \textbf{Intensity normalization \& smoothing:} The input image undergoes histogram equalization and smoothing to mitigate global lighting variations and noise.
+    \item \textbf{Calculate edge map:} The spatial gradients are evaluated to extract both the magnitude and the phase (direction) for every pixel.
+    \item \textbf{Evaluate edge histograms (Cells):} The image is divided into $8 \times 8$ non-overlapping cells. For each cell, an edge histogram is compiled to create a \textbf{voting vector} (typically quantizing orientations into 9 bins of $20^\circ$ each, covering $180^\circ$).
+    \item \textbf{Create overlapping blocks:} The individual cells are spatially grouped into larger overlapping regions, typically composed of $2 \times 2$ cells.
+    \item \textbf{Normalize block vectors:} To ensure robustness against local illumination and contrast changes, the voting vectors are mathematically normalized locally over each $2 \times 2$ block, creating a consolidated block vector (e.g., $4 \text{ cells} \times 9 \text{ bins} = 36$ elements).
+    \item \textbf{Serialize block vectors:} All the normalized block vectors are concatenated sequentially (serialized) into a final, single 1D descriptor vector.
+\end{enumerate}}
+
+\qa{HOG Descriptor Dimensionality Calculation}
+{Given a standard $64 \times 128$ pixel detection window, how is the exact dimensionality of the HOG descriptor mathematically derived to be 3780?
+\begin{itemize}
+    \item \textbf{Cells:} At $8 \times 8$ pixels per cell, the $64 \times 128$ window is divided into a grid of $8 \times 16$ cells.
+    \item \textbf{Histograms:} Each cell computes a 9-bin orientation histogram.
+    \item \textbf{Blocks (Overlapping):} The algorithm groups cells into $2 \times 2$ blocks. Because these blocks overlap by one cell in each direction, an $8 \times 16$ cell grid yields $(8-1) \times (16-1) = 7 \times 15 = \textbf{105 blocks}$.
+    \item \textbf{Elements per Block:} Each block contains 4 cells, and each cell has 9 bins, resulting in $4 \times 9 = \textbf{36 elements}$ per block.
+    \item \textbf{Final Vector:} $105 \text{ blocks} \times 36 \text{ elements/block} = \textbf{3780 elements}$ (dimensions) serialized for the classifier.
+\end{itemize}}
+
+\qa{What are the strict structural requirements for applying HOG to bounding boxes, and how does the algorithm compensate for its lack of native scale invariance?}
+{
+\begin{itemize}
+    \item \textbf{Standardization Requirement:} The HOG descriptor characterizes the entire holistic content of a bounding box, producing a vector destined for a classifier (like an SVM). Because standard classifiers require fixed-length input vectors, every bounding box must be physically resized (warped) to a strictly predetermined standard pixel size (e.g., $64 \times 128$) \textit{before} the descriptor gradients are computed.
+    \item \textbf{External Scale Management:} Unlike SIFT, the HOG mathematical formulation is not natively scale-invariant. To detect objects of varying sizes, the pipeline must rely on an external mechanism: evaluating sliding windows across an image pyramid. The system extracts bounding boxes of different physical dimensions and scales them all down to the standard size to generate comparable vectors.
+    \item \textbf{Hyperparameter Trade-offs:} The specific architecture ($8 \times 8$ cells, $2 \times 2$ blocks) represents just one possible implementation. These are tunable parameters that dictate the final vector size and spatial granularity. Using smaller cells captures finer, high-frequency structural details but drastically increases the final vector dimensionality and susceptibility to spatial noise. Larger cells provide greater spatial invariance but risk blurring distinct boundaries together.
+\end{itemize}}
+
+% --- BAG OF WORDS (BoW) ---
+
+\qa{What is the fundamental abstraction of the Bag of Words (BoW) model in computer vision, and what is its primary geometric trade-off?}
+{
+BoW treats an image as an unstructured, unordered collection of independent "visual words" (local feature patches). The model explicitly \textbf{discards all spatial relationships} and global geometry between features. While this makes the algorithm highly invariant to severe viewpoint changes, occlusion, and non-rigid deformations (e.g., recognizing a highly articulated human body), it fundamentally blinds the system to structural context (e.g., it cannot distinguish between a face and a scrambled collage of facial features).
+}
+
+\qa{How is the continuous feature space mathematically discretized to form the visual "codebook" or dictionary?}{
+\begin{itemize}
+    \item First, highly discriminative local features (specifically using extractors like \textbf{SIFT, ORB, or GLOH}) are densely extracted across a massive training dataset containing the objects of interest.
+    \item Because these continuous descriptors map to an infinite feature space, an unsupervised clustering algorithm (typically \textbf{K-means}) is applied to partition the space into $K$ distinct groups.
+    \item The \textbf{centroids} (representative samples) of these $K$ clusters become the discrete "visual words". The entire collection of centroids serves as the definitive codebook, providing a finite, compact vocabulary.
+\end{itemize}}
+
+\qa{Test Image Encoding: The BOVW Representation}
+{What is the exact processing pipeline to encode a novel test image into a Bag of Visual Words (BOVW) representation?
+\begin{itemize}
+    \item \textbf{1. Extraction:} Detect and extract local feature descriptors (e.g., SIFT/ORB) from the test image.
+    \item \textbf{2. Quantization (Vector Association):} For every extracted descriptor, compute the distance against all centroids in the pre-computed codebook. The descriptor is strictly mapped to its nearest neighbor codeword.
+    \item \textbf{3. Histogram Generation:} Tally the total occurrences of each visual word. The output is a 1D \textbf{frequency vector} (the BOVW representation). This normalizes the data: regardless of whether the original image produced 500 or 5,000 keypoints, the final BOVW vector will strictly have a length of $K$ (the exact size of the dictionary).
+\end{itemize}}
+
+\qa{What is the exact processing pipeline to encode an image into a BoW representation?}
+{
+\begin{itemize}
+    \item \textbf{1. Extraction:} Detect and extract local feature descriptors from the test image. This is done for each object or class to be recognized
+    \item \textbf{2. Quantization (Vector Association):} For every extracted descriptor, compute the distance (e.g., Euclidean) against all centroids in the pre-computed codebook. The descriptor is strictly mapped to its nearest neighbor codeword.
+    \item \textbf{3. Histogram Generation:} Tally the total occurrences of each visual word. The output is a 1D \textbf{frequency vector} (histogram). This brilliantly normalizes the data: regardless of whether the original image produced 500 or 5,000 keypoints, the final frequency vector will strictly have a length of $K$ (the size of the dictionary).
+\end{itemize}}
+
+\qa{Downstream Execution: Matching vs. Classification}
+{Once the fixed-length frequency vector is generated, how is it operationally utilized for final object recognition?
+\begin{itemize}
+    \item \textbf{Direct Matching:} The test vector can be directly compared against a database of known object vectors using standard similarity metrics (e.g., Euclidean distance or dot product).
+    \item \textbf{Machine Learning Pipeline (Industry Standard):} More effectively, the frequency vector serves as a standardized, fixed-length input for a discriminative classifier (such as a Support Vector Machine or a Random Forest). The classifier learns to map specific distributions of visual words to semantic labels.
+\end{itemize}}

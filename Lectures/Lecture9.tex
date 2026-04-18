@@ -57,6 +57,14 @@
 Otsu's method evaluates every possible threshold $k$, computes class probabilities and means, and picks the $k$ that maximizes the inter-class variance $\sigma_B^2$. Since the global variance is fixed ($\sigma_G^2 = \sigma_{in}^2 + \sigma_B^2$), maximizing $\sigma_B^2$ is exactly equivalent to minimizing the intra-class variance $\sigma_{in}^2$, giving the optimal separation between the two classes.
 }
 
+\qa{Does Otsu's method fail when foreground and background regions have very different areas (sizes), and why?}{
+\begin{itemize}
+    \item \textbf{No, it does not fail solely due to area differences.} Otsu's method calculates the threshold based on minimizing intra-class variance. The class probabilities ($P_0$ and $P_1$) in the variance formula naturally account for the number of pixels (area) in each class.
+    \item As long as there is a significant contrast between the two regions (a distinct valley between the peaks in the histogram), Otsu will find the optimal threshold regardless of whether the foreground is small (e.g., a few pixels) or large (e.g., half the image).
+    \item The method \textit{does} struggle if the histogram is unimodal or if the valley between the two modes is very shallow (low contrast), but this is an issue of contrast/noise, not a difference in the relative areas of the objects.
+\end{itemize}
+}
+
 \qa{In the context of Otsu's algorithm, what is the conceptual difference between the cumulative mean \texorpdfstring{$m(k)$}{m(k)} and the mean intensity value \texorpdfstring{$m_1(k)$}{m1(k)} for Class 1?}{
 \begin{itemize}
     \item The \textbf{cumulative mean} $m(k) = \sum_{i=0}^{k} i p_i$ calculates the mean up to intensity level $k$, but it is normalized over the \textit{whole} image.

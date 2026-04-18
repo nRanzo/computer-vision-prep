@@ -2,10 +2,10 @@
 
 \qa{Why is the sliding window approach computationally daunting for face detection, and what two absolute design imperatives must the Viola-Jones architecture satisfy to overcome this?}
 {
-\begin{itemize}
-    \item The sliding window must evaluate all spatial locations across multiple scales, resulting in millions of candidate patches per image.
-    \item Since the vast majority of these patches are non-faces, the architecture must achieve two things to be viable: 1) \textbf{extremely fast processing} to rapidly discard non-face background patches, and 2) a \textbf{very low false positive rate} to prevent the sheer volume of background windows from overwhelming the final output.
-\end{itemize}}
+The sliding window must evaluate all spatial locations across multiple scales, resulting in millions of candidate patches per image.
+
+Since the vast majority of these patches are non-faces, the architecture must achieve two things to be viable: 1) a \textbf{fast processing} to rapidly discard non-face background patches, and 2) a \textbf{very low false positive rate} to prevent the sheer volume of background windows from overwhelming the final output.
+}
 
 \qa{How are Haar features mathematically defined and evaluated, and what is the engineering trade-off regarding their structural coarseness?}
 {
@@ -30,9 +30,9 @@
 \qa{What is the structural logic of the Viola-Jones cascade, and how does it enforce error asymmetry while drastically reducing computational cost?}
 {
 \begin{itemize}
-    \item The cascade arranges weak classifiers into sequential, increasingly complex stages (e.g., Stage 1 uses 1 feature, Stage 2 uses 10 features). A sliding window must pass \textit{every} stage to be classified as a face; if it fails any stage, it is instantly rejected and computation halts.
-    \item \textbf{Computational Efficiency (Early Rejection):} Since most sliding windows are purely background, the cascade rejects them extremely early. Rejecting a background patch in Stage 1 requires almost zero computation, saving the system from evaluating thousands of features on empty space. The complex later stages are strictly reserved for rare face-like regions.
-    \item \textbf{Error Asymmetry:} A \textbf{False Positive} at an early stage is acceptable because stricter stages later on will filter it out. Conversely, a \textbf{False Negative} is fatal: if a true face is rejected early, it vanishes from the pipeline forever. Thus, early stages are aggressively tuned for near 100\% recall (catching all possible faces) at the heavy expense of precision.
+    \item The cascade arranges weak classifiers into sequential, increasingly complex stages (e.g., Stage 1 uses 1 feature, Stage 2 uses 10 features). A sliding window must pass \textit{every} stage to be classified as a face; if it fails any single stage, it is instantly rejected and computation halts entirely for that window.
+    \item \textbf{Computational Efficiency (Early Rejection):} Because the vast majority of sliding windows in an image contain only background, the cascade rejects them almost immediately. Rejecting a background patch in Stage 1 requires evaluating only a single feature, saving the system from calculating thousands of complex features on empty space. The computationally heavy later stages are strictly reserved for rare, face-like regions.
+    \item \textbf{Error Asymmetry:} The cascade intentionally treats false positives and false negatives differently. A \textbf{False Positive} at an early stage is highly acceptable because the stricter, more complex stages later in the pipeline are specifically designed to filter it out. Conversely, a \textbf{False Negative} is fatal: if a true face is rejected early, it vanishes from the pipeline forever. Therefore, early stages are aggressively tuned for near 100\% recall (catching all possible faces) at the deliberate expense of precision.
 \end{itemize}}
 
 \qa{What visual cues does the Viola-Jones detector capture, and how do local Haar patterns relate to human facial components?}
