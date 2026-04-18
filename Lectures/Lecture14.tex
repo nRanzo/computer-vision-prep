@@ -25,7 +25,7 @@
 
 \qa{What is the structural logic of the Viola-Jones Cascade, and why does it enforce a strict asymmetry between False Positives and False Negatives?}
 {
-\begin{itemize}
-    \item The cascade arranges weak classifiers into sequential, increasingly complex stages (e.g., Stage 1 uses 1 feature, Stage 2 uses 10 features, etc.). A sliding window must pass \textit{every} stage to be classified as a face; if it fails any stage, it is instantly rejected and computation halts.
-    \item \textbf{Error Asymmetry:} A \textbf{False Positive} in an early stage is highly acceptable because subsequent, stricter stages are designed to filter it out. Conversely, a \textbf{False Negative} is fatal because if a true face is rejected at Stage 1, it drops out of the pipeline and can never be recovered. Therefore, early stages are aggressively tuned for near 100\% recall (detecting all faces) at the heavy expense of precision.
-\end{itemize}}
+The cascade arranges weak classifiers into sequential, increasingly complex stages (e.g., Stage 1 uses 1 feature, Stage 2 uses 10 features, etc.). A sliding window must pass \textit{every} stage to be classified as a face; if it fails any stage, it is instantly rejected and computation halts.
+
+A \textbf{False Positive} in an early stage is highly acceptable because subsequent, stricter stages are designed to filter it out. Conversely, a \textbf{False Negative} is fatal because if a true face is rejected at Stage 1, it drops out of the pipeline and can never be recovered. Therefore, early stages are aggressively tuned for near 100\% recall (detecting all faces) at the heavy expense of precision.
+}

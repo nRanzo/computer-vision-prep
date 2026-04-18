@@ -1,0 +1,44 @@
+\lecture{Lecture 16: tbd}
+
+\qa{Taxonomy of Recognition Tasks: Output Structures}
+{In the computer vision pipeline, how do the structural outputs fundamentally differ between Classification + Localization, Object Detection, and Instance Segmentation?
+\begin{itemize}
+    \item \textbf{Classification + Localization:} Assumes a single dominant object per image. It outputs one categorical label and one bounding box (4 coordinates: $x, y, w, h$).
+    \item \textbf{Object Detection:} Relaxes the single-object assumption. It outputs an arbitrary number of bounding boxes, each coupled with a specific class label, allowing for multiple instances and clutter.
+    \item \textbf{Instance Segmentation:} Drops the crude bounding box abstraction entirely. It computes exact pixel-level masks for every distinct object instance, effectively combining object detection with semantic segmentation.
+\end{itemize}}
+
+\qa{Deformations vs. Intra-class Variations}
+{What is the critical engineering distinction between geometric/photometric deformations and intra-class variations, and why do simple templates fail on the latter?
+\begin{itemize}
+    \item \textbf{Geometric/Photometric Deformations:} Arise from camera position, perspective shifts, or illumination changes acting on the \textit{exact same physical object}. A template can theoretically be warped or normalized to correct for these.
+    \item \textbf{Intra-class Variations:} Arise from the inherent structural differences between \textit{distinct physical objects} that share a semantic label (e.g., a rigid wooden chair vs. a soft recliner). Rigid template matching inherently fails here because no simple affine transformation maps the geometry of one to the other.
+\end{itemize}}
+
+\qa{Sliding Window Template Matching: Affine Fragility}
+{Why is the naive sliding-window template matching approach computationally brittle when faced with unconstrained real-world affine transformations?
+\begin{itemize}
+    \item A standard template is a fixed, 2D rigid array of pixels. It fundamentally lacks native invariance to scale and rotation.
+    \item To detect objects at different distances or angles, the algorithm is forced to brute-force the problem by generating a massive discrete bank of rescaled and rotated templates. Convolving this entire bank across every pixel of the target image results in a computational explosion, making it entirely unscalable for highly variable scenes.
+\end{itemize}}
+
+\qa{Similarity Metrics: SSD/SAD vs. ZNCC}
+{Under what specific photometric conditions do SSD and SAD catastrophically fail, and how does ZNCC mathematically mitigate this weakness?
+\begin{itemize}
+    \item \textbf{SSD (Sum of Squared Differences) and SAD (Sum of Absolute Differences)} operate on raw intensity magnitudes. If the target image undergoes a uniform illumination shift (e.g., a shadow falls over it), the absolute pixel values diverge, and the match fails immediately despite perfect structural alignment.
+    \item \textbf{ZNCC (Zero-mean Normalized Cross-Correlation)} corrects this by dynamically subtracting the local window mean ($\bar{I}(x,y)$) and the template mean ($\bar{T}$) before multiplication, centering the intensity distributions at zero. Dividing by the product of their standard deviations ($\sigma_I \sigma_T$) normalizes contrast. This explicitly isolates the structural variance and mathematically cancels out global linear shifts in brightness and contrast.
+\end{itemize}}
+
+\qa{Coping with Illumination (Without ZNCC)}
+{If calculating ZNCC is too computationally expensive for a real-time system, what is the standard architectural workaround to achieve illumination robustness in template matching?
+\begin{itemize}
+    \item Instead of matching raw RGB or grayscale intensity values, the images are pre-processed using derivative filters (e.g., Sobel or Canny) to extract \textbf{edge maps} or gradient orientations.
+    \item Because gradients measure local intensity \textit{changes} rather than absolute magnitudes, they naturally filter out uniform, low-frequency illumination gradients, allowing faster metrics like SAD to perform robustly on the structural boundaries.
+\end{itemize}}
+
+\qa{Generalized Hough Transform vs. Rigid Templates}
+{How does the Generalized Hough Transform (GHT) conceptually replace rigid template matching, and what is the severe dimensionality trade-off it introduces?
+\begin{itemize}
+    \item Rather than sliding a dense block of pixels across an image, the GHT describes a shape via a generalized equation $g(\boldsymbol{v}, \boldsymbol{c}) = 0$ (or a discrete lookup table). It relies on edge detection to let isolated image pixels "vote" directly into a parameter space for the location of the shape's centroid.
+    \item \textbf{Trade-off:} While it abandons the sliding window, it suffers from the curse of dimensionality. For complex shapes requiring scale and rotation invariance, the parameter space $\boldsymbol{c}$ becomes heavily multi-dimensional (e.g., $x, y, s, \theta$). This requires exponentially larger memory to store the accumulator array and creates highly sparse voting spaces that are difficult to threshold accurately.
+\end{itemize}}
