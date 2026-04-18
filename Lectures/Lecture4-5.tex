@@ -17,9 +17,18 @@ Thresholding: extreme form of contrast stretching used for image segmentation. I
 }
 
 \qa{What is the main limitation of Histogram Equalization, and why might we use Histogram Specification (Matching) instead?}{
-The primary limitation of Histogram Equalization is that it is a fully automatic, global operation. It aggressively forces the image's histogram to be as flat as possible. While this generally increases contrast, it cannot be controlled. In images with uniform backgrounds or mostly dark/light areas, equalization can artificially enhance background noise or wash out important details.
+The primary limitation of Histogram Equalization is that it is a fully automatic, global operation that aggressively forces the image's histogram to be as flat as possible. While this generally increases contrast, it cannot be controlled and may artificially enhance background noise or wash out details in uniform areas.
 
-Histogram Specification (Matching) solves this by giving the user control. Instead of forcing a flat histogram, it transforms the original image so that its histogram matches a specific, user-defined target histogram highlighting desired intensity ranges. This is useful for standardizing images from different sensors or preventing the over-enhancement caused by standard equalization.
+Histogram Specification (Matching) addresses this by giving the user control over the output intensity distribution. Unlike Equalization, Specification transforms the input image to match a specific, user-defined target histogram rather than forcing a flat one. This is useful for standardizing images from different sensors, for preventing the over-enhancement caused by standard equalization or for highlighting specific intensity ranges.
+
+The algorithm is a \textbf{global point operation}, meaning the output pixel value depends strictly on the input pixel intensity and the global transformation function (derived from CDFs), not on the neighborhood of pixels. Therefore, it differs from spatial filtering or edge detection, which rely on local operations.
+
+The mathematical procedure consists of three steps:
+\begin{enumerate}
+    \item \textbf{Equalize Input:} Compute the Cumulative Distribution Function (CDF) of the original image to map original intensities $r$ to intermediate equalized values $s$.
+    \item \textbf{Equalize Target:} Compute the CDF of the specified target histogram to map desired output intensities $z$ to the same intermediate equalized values $v$ (where $v \approx s$).
+    \item \textbf{Inverse Transform:} Apply the inverse of the target transformation, $z = G^{-1}(s)$, to map the intermediate values $s$ to the final target intensities $z$, resulting in an image with the user-defined histogram shape (neglecting rounding effects).
+\end{enumerate}
 }
 
 \qa{Explain the concepts of histogram and its equalization. A) Define an image histogram. B) What is the goal of histogram equalization and why is it useful? C) Outline the procedure for deriving the equalization function, providing an example.}{
