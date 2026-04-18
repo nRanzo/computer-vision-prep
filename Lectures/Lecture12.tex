@@ -1,12 +1,35 @@
 \lecture{Lecture 12: Harris corners and SIFT}
 
-\qa{In the Harris Corner Detector, how do the eigenvalues (\texorpdfstring{$\lambda_0, \lambda_1$}{lambda0, lambda1}) of the auto-correlation matrix (structure tensor) \texorpdfstring{$A$}{A} mathematically classify the local image patch?}
+\qa{Consider the Harris corner detector, where corner detection is mainly based on the autocorrelation matrix \texorpdfstring{$A$}{A}: a) Describe how the autocorrelation matrix is mathematically derived for a grayscale image \texorpdfstring{$I(x, y)$}{I(x,y)}. b) What kind of information about the content of the patch can be obtained from the autocorrelation matrix? Describe the relation between the autocorrelation matrix and the possible salient points to be found in an image. c) Describe the various types of transformations that are invariant for the Harris corner detector, providing also some examples.}
 {
+\textbf{a) Mathematical derivation of the autocorrelation matrix \texorpdfstring{$A$}{A}:}
+\\
+The detector analyzes the change in intensity for a small spatial shift $(u, v)$ using the Sum of Squared Differences (SSD) as an auto-correlation function:
+$$E(u, v) = \sum_{x,y} w(x, y) [I(x+u, y+v) - I(x, y)]^2$$
+where $w(x, y)$ is a window function (e.g., uniform or a Gaussian weighting).
+Using a first-order Taylor expansion, the shifted image intensity is approximated as:
+$$I(x+u, y+v) \approx I(x, y) + I_x u + I_y v$$
+where $I_x$ and $I_y$ are the image gradients in the $x$ and $y$ directions. Substituting this back gives:
+$$E(u, v) \approx \sum_{x,y} w(x, y) [I_x u + I_y v]^2 = \begin{bmatrix} u & v \end{bmatrix} A \begin{bmatrix} u \\ v \end{bmatrix}$$
+where $A$ is the autocorrelation matrix (or structure tensor):
+$$A = \sum_{x,y} w(x, y) \begin{bmatrix} I_x^2 & I_x I_y \\ I_x I_y & I_y^2 \end{bmatrix}$$
+
+\textbf{b) Information obtained and relation to salient points:}
+\\
+The matrix $A$ describes the variance of spatial gradients (data spread) within the local patch along its principal directions. By analyzing its eigenvalues $\lambda_0$ and $\lambda_1$ (which represent the magnitude of the maximum and minimum variance of the gradients), we classify the local image content based on spatial displacement $(\Delta x, \Delta y)$:
 \begin{itemize}
-    \item The matrix $A$ describes the variance of spatial gradients (data spread) within the local patch along its principal directions.
-    \item \textbf{Flat/Uniform Region:} Both $\lambda_0$ and $\lambda_1$ are small. Moving the patch in any spatial direction produces little to no change in the local intensity.
+    \item \textbf{Flat/Uniform Region:} Both $\lambda_0$ and $\lambda_1$ are small. Moving the patch in any spatial direction produces little to no change in the local intensity (no salient point).
     \item \textbf{Edge:} One eigenvalue is large, and the other is small. Displacement perpendicular to the edge causes a massive change, but displacement along the edge causes almost no change.
-    \item \textbf{Corner:} Both $\lambda_0$ and $\lambda_1$ are large. Any spatial displacement $(\Delta x, \Delta y)$ in any direction produces a significant intensity change.
+    \item \textbf{Corner:} Both $\lambda_0$ and $\lambda_1$ are large. Any spatial displacement in any direction produces a significant intensity change. The junction of these gradients makes the point highly well-localized and uniquely identifiable, thus an ideal salient point.
+\end{itemize}
+
+\textbf{c) Invariant transformations for the Harris detector:}
+\\
+\begin{itemize}
+    \item \textbf{Translation invariance:} Since the detector is based on numerical spatial derivatives, image gradients simply shift with translation. A translated corner will be perfectly re-detected (e.g., tracking a static object when a camera pans left/right).
+    \item \textbf{Rotation invariance:} The eigenvalues of $A$ are intrinsically rotation-invariant. The eigenvectors will rotate with the corner, but the magnitude of the principal curvatures remains identical (e.g., detecting corners on a square that gets rotated by 45 degrees).
+    \item \textbf{Additive Brightness Offset (Partial Illumination Invariance):} Taking numerical spatial derivatives ($\nabla I_x, \nabla I_y$) means adding a uniform brightness constant $I(x,y) + c$ identically vanishes during derivation (e.g., matching points in a slightly brighter room).
+    \item \textbf{Not Invariant to Spatial Scaling (Failure Mode):} If an image is heavily magnified, a sharp geometric angle will stretch out and appear as a localized smooth edge or a flat curve to the detector. Since the algorithm evaluates a fixed-size analysis window, it fundamentally fails to recognize scaled-up corners.
 \end{itemize}
 }
 
@@ -18,15 +41,6 @@ The Harris response $R$ mathematically bypasses this by exploiting properties of
     \item $R$ is \textbf{significantly positive}: Indicates a corner (the product of the two large eigenvalues dominates).
     \item $R$ is \textbf{significantly negative}: Indicates an edge (one large eigenvalue drives up the trace penalty squared, pushing the overall value negative).
     \item $|R|$ is \textbf{close to zero}: Indicates a flat region (both eigenvalues are negligible).
-\end{itemize}
-}
-
-\qa{What are the theoretical invariances of the Harris corner detector, and what is its primary geometric failure mode?}
-{
-\begin{itemize}
-    \item \textbf{Invariant to Translation and Rotation:} Image gradients simply shift with translation, and the eigenvalues of the auto-correlation matrix are intrinsically rotation-invariant.
-    \item \textbf{Invariant to Additive Brightness Offset:} Because the matrix relies exclusively on numerical spatial derivatives ($\nabla I_x, \nabla I_y$), adding a uniform brightness constant $I(x,y) + c$ identically vanishes during derivation.
-    \item \textbf{Not Invariant to Scaling (Failure Mode):} If an image is heavily magnified, a sharp geometric angle will stretch out and appear as a localized smooth edge or a flat curve to the detector. Since the algorithm evaluates a fixed-size analysis window, it fundamentally fails to recognize scaled-up corners.
 \end{itemize}
 }
 

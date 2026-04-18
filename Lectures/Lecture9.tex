@@ -21,14 +21,25 @@
 \end{itemize}
 }
 
-\qa{Since morphological operations are not cumulative, when is it appropriate to use [Opening then Closing] versus [Closing then Opening]?}{
+\qa{Since morphological operations are not cumulative, when is it appropriate to use [Opening then Closing] versus [Closing then Opening]?}
+{
 \begin{itemize}
     \item Use \textbf{Opening then Closing} when the background noise is severe but the main object is relatively sturdy (e.g., a noisy fingerprint). The Opening clears the background ``salt'' noise first so it doesn't get fused to the object, then the Closing patches cracks in the ridges.
     \item Use \textbf{Closing then Opening} when the main object is highly fragmented or full of holes (e.g., poorly printed dot-matrix text). You must Close first to fuse the broken pieces together; if you Opened first, the initial erosion step would completely erase the fragile object.
 \end{itemize}
 }
 
-\qa{In the context of morphological descriptions, what is the conceptual difference between the image set versus the structuring element?}{
+\qa{Is it mathematically valid to increase the strength of a morphological opening operator by simply applying it twice consecutively?}
+{
+\begin{itemize}
+    \item \textbf{No, this is a fundamental conceptual error.} Morphological opening (erosion followed by dilation) is strictly an \textbf{idempotent} mathematical operation.
+    \item \textbf{Idempotence ($A \circ B \circ B = A \circ B$):} Once an image is opened with a specific structuring element $B$, all structures smaller than the geometry of $B$ are completely eradicated. Applying the exact same operator a second time will have absolutely zero additional effect because there is nothing left at that specific spatial scale to remove.
+    \item \textbf{Correct Engineering Approach:} To aggressively increase the "strength" of an opening operation (e.g., to filter out larger noise blobs or disconnect thicker bridges), you must physically \textbf{increase the spatial dimensions} or change the shape of the structuring element $B$ (e.g., scaling a $3 \times 3$ kernel up to a $5 \times 5$ kernel), rather than repeating the operation.
+\end{itemize}
+}
+
+\qa{In the context of morphological descriptions, what is the conceptual difference between the image set versus the structuring element?}
+{
 \begin{itemize}
     \item The \textbf{image set} is the mathematical representation of the image itself. In the simplest case of a binary image, the image is defined as the set of coordinates containing the foreground pixels. Morphological operators act on this set by adding or removing pixels to/from it.
     \item The \textbf{structuring element} is the predefined ``probe'' or shape applied to the image. Its specific shape determines the direction(s) and extent to which pixels are added to or removed from the image set.
