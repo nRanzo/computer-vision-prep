@@ -1,0 +1,41 @@
+\lecture{Lecture 17: Pinhole camera model}
+
+\qa{Why does the standard computer vision camera model mathematically place the image plane \textit{in front} of the optical center, deviating from how a physical pinhole camera works?}{
+\begin{itemize}
+    \item A physical pinhole camera captures light rays passing through the aperture, projecting an inverted (upside-down and horizontally flipped) image on the sensor plane located \textit{behind} the focal point.
+    \item Placing a "virtual" image plane at the exact same focal distance $f$ but \textit{in front} of the optical center preserves the identical geometric projection properties (via similar triangles) while mathematically stripping away the negative signs. This completely avoids the upside-down effect, streamlining all subsequent coordinate transformations and matrix algebra.
+\end{itemize}}
+
+\qa{How is the camera's Field of View mathematically defined, and what is the strict physical trade-off required to widen it?}{
+\begin{itemize}
+    \item The maximum viewing angle (FoV) is derived via trigonometry based on the physical size of the sensor $d$ and the focal length $f$:
+    $$ \text{FoV} = 2 \varphi = 2 \arctan\left(\frac{d}{2f}\right) $$
+    \item To capture a wider scene (increase FoV), you must either increase the physical sensor size $d$ (which drastically increases hardware cost and lens complexity) or decrease the focal length $f$ (which reduces optical magnification and often introduces severe non-linear radial distortions, such as the "fish-eye" effect).
+\end{itemize}}
+
+\qa{Why are standard Cartesian coordinates insufficient for 3D-to-2D camera modeling, and how do homogeneous coordinates solve this?}{
+\begin{itemize}
+    \item Standard Cartesian representations cannot express the non-linear perspective division (the division by $Z$) as a simple linear matrix multiplication.
+    \item By augmenting the dimensionality of the vectors (e.g., mapping a 3D point to a 4D vector $[X, Y, Z, 1]^T$), homogeneous coordinates allow translations, rotations, and perspective scaling to be unified into a single, continuous linear matrix operation: $\tilde{m} \simeq P \tilde{M}$. The final division is cleanly delayed until the coordinates are converted back from homogeneous to Cartesian space.
+\end{itemize}}
+
+\qa{What is the strict structural distinction between intrinsic and extrinsic camera parameters, and exactly how many degrees of freedom does each control?}{
+\begin{itemize}
+    \item \textbf{Extrinsic Parameters ($T$):} Define the camera's absolute pose relative to the 3D world origin. This rototranslation matrix contains exactly \textbf{6 parameters} (3 for rotation, 3 for translation). These change continuously if the camera moves through the environment.
+    \item \textbf{Intrinsic Parameters ($K$):} Define the internal optical and digital characteristics of the sensor. There are \textbf{5 raw parameters}: focal length ($f$), pixel width/height scaling factors ($k_u, k_v$), and the pixel coordinates of the principal point ($u_0, v_0$). 
+    \item Mathematically, $f, k_u,$ and $k_v$ merge into just two variables inside the matrix: focal length in pixels ($f_u = f \cdot k_u$ and $f_v = f \cdot k_v$). Thus, the final intrinsic matrix $K$ operates on exactly \textbf{4 internal degrees of freedom} ($f_u, f_v, u_0, v_0$).
+\end{itemize}}
+
+\qa{What are the four distinct reference systems and three sequential transformations that define the complete camera projection pipeline?}{
+\begin{itemize}
+    \item \textbf{1. World to Camera (3D $\to$ 3D):} Applies the extrinsic rototranslation matrix to align absolute world coordinates with the camera's local XYZ axes.
+    \item \textbf{2. Camera to Sensor Plane (3D $\to$ 2D continuous):} Applies the essential perspective projection, utilizing similar triangles to map spatial points onto the continuous physical image plane.
+    \item \textbf{3. Sensor Plane to Pixels (2D $\to$ 2D discrete):} Applies the intrinsic matrix $K$ to translate the origin to the top-left corner (via $u_0, v_0$) and scale metric distances into discrete pixel grids (via $f_u, f_v$).
+\end{itemize}}
+
+\qa{What are the two mathematical operations that make camera projection strictly non-invertible, and what compromises are required to partially invert the system?}{
+\begin{itemize}
+    \item \textbf{1. The 3D $\to$ 2D Projection:} The division by $Z$ permanently collapses the depth dimension.
+    \item \textbf{2. Pixel Quantization:} Converting continuous metric measurements into discrete integer pixel bins inherently destroys sub-pixel accuracy.
+    \item \textbf{The Compromise:} To invert the projection (map a pixel back to the real world), we must mathematically accept a \textbf{3D direction vector (a ray)} instead of a single point, provide external structural constraints (e.g., assuming the point lies on a known floor plane), and strictly neglect the quantization error (acceptable only for high-resolution sensors).
+\end{itemize}}
