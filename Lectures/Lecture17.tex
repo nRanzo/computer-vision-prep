@@ -8,7 +8,7 @@
 
 \qa{How is the camera's Field of View mathematically defined, and what is the strict physical trade-off required to widen it?}{
 \begin{itemize}
-    \item The maximum viewing angle (FoV) is derived via trigonometry based on the physical size of the sensor $d$ and the focal length $f$:
+    \item The maximum viewing angle (FoV) is derived via trigonometry based on the physical dimension of the sensor $d$ (using sensor width for horizontal FoV, or height for vertical FoV) and the focal length $f$:
     $$ \text{FoV} = 2 \varphi = 2 \arctan\left(\frac{d}{2f}\right) $$
     \item To capture a wider scene (increase FoV), you must either increase the physical sensor size $d$ (which drastically increases hardware cost and lens complexity) or decrease the focal length $f$ (which reduces optical magnification and often introduces severe non-linear radial distortions, such as the "fish-eye" effect).
 \end{itemize}}
@@ -23,19 +23,38 @@
 \begin{itemize}
     \item \textbf{Extrinsic Parameters ($T$):} Define the camera's absolute pose relative to the 3D world origin. This rototranslation matrix contains exactly \textbf{6 parameters} (3 for rotation, 3 for translation). These change continuously if the camera moves through the environment.
     \item \textbf{Intrinsic Parameters ($K$):} Define the internal optical and digital characteristics of the sensor. There are \textbf{5 raw parameters}: focal length ($f$), pixel width/height scaling factors ($k_u, k_v$), and the pixel coordinates of the principal point ($u_0, v_0$). 
-    \item Mathematically, $f, k_u,$ and $k_v$ merge into just two variables inside the matrix: focal length in pixels ($f_u = f \cdot k_u$ and $f_v = f \cdot k_v$). Thus, the final intrinsic matrix $K$ operates on exactly \textbf{4 internal degrees of freedom} ($f_u, f_v, u_0, v_0$).
+    \item Mathematically, $f, k_u,$ and $k_v$ merge into just two variables inside the matrix: focal length in pixels ($f_u = f \cdot k_u$ and $f_v = f \cdot k_v$). Thus, assuming zero skew* (standard for modern sensors), the final intrinsic matrix $K$ operates on exactly \textbf{4 internal degrees of freedom} ($f_u, f_v, u_0, v_0$).
 \end{itemize}}
+
+*the deviation from rectangularity between the x and y axes of the image sensor or pixel grid
 
 \qa{What are the four distinct reference systems and three sequential transformations that define the complete camera projection pipeline?}{
 \begin{itemize}
-    \item \textbf{1. World to Camera (3D $\to$ 3D):} Applies the extrinsic rototranslation matrix to align absolute world coordinates with the camera's local XYZ axes.
-    \item \textbf{2. Camera to Sensor Plane (3D $\to$ 2D continuous):} Applies the essential perspective projection, utilizing similar triangles to map spatial points onto the continuous physical image plane.
-    \item \textbf{3. Sensor Plane to Pixels (2D $\to$ 2D discrete):} Applies the intrinsic matrix $K$ to translate the origin to the top-left corner (via $u_0, v_0$) and scale metric distances into discrete pixel grids (via $f_u, f_v$).
+    \item \textbf{Four reference frames (global → sensor):}
+    \begin{enumerate}
+        \item \textbf{World frame:} Absolute 3D coordinates.
+        \item \textbf{Camera frame:} 3D coordinates relative to the camera optical centre (pose given by $T=[R\mid t]$).
+        \item \textbf{Image plane (metric):} Continuous 2D coordinates on the projection surface (often modeled as a virtual plane at focal distance $f$).
+        \item \textbf{Pixel frame:} Discrete 2D integer coordinates on the digital sensor (origin typically top-left).
+    \end{enumerate}
+    \item \textbf{Three sequential transformations:}
+    \begin{enumerate}
+        \item \textbf{World $\to$ Camera (3D $\to$ 3D):} Apply extrinsics $T=[R\mid t]$: $X_c = R\,X_w + t$.
+        \item \textbf{Camera $\to$ Image plane (3D $\to$ 2D continuous):} Perspective projection (similar triangles): $(x,y)=\left(\dfrac{fX_c}{Z_c},\dfrac{fY_c}{Z_c}\right)$ (or normalized $(X_c/Z_c,\,Y_c/Z_c)$).
+        \item \textbf{Image plane $\to$ Pixels (2D continuous $\to$ 2D discrete):} Apply intrinsics $K$:
+        $$s\begin{bmatrix}u\\v\\1\end{bmatrix}=K\begin{bmatrix}x\\y\\1\end{bmatrix},\quad
+        K=\begin{bmatrix} f_u & s & u_0 \\ 0 & f_v & v_0 \\ 0 & 0 & 1 \end{bmatrix},$$
+        where $s$ (skew) is usually $0$, and $f_u,f_v$ are focal lengths in pixels.
+    \end{enumerate}
+    \item \textbf{Compact homogeneous form:} 
+    $$s\begin{bmatrix}u\\v\\1\end{bmatrix}=K\,[R\mid t]\begin{bmatrix}X_w\\Y_w\\Z_w\\1\end{bmatrix}.$$
 \end{itemize}}
 
-\qa{What are the two mathematical operations that make camera projection strictly non-invertible, and what compromises are required to partially invert the system?}{
+
+\qa{What are the mathematical operations that make camera projection strictly non-invertible, and what compromises are required to partially invert the system?}{
 \begin{itemize}
     \item \textbf{1. The 3D $\to$ 2D Projection:} The division by $Z$ permanently collapses the depth dimension.
     \item \textbf{2. Pixel Quantization:} Converting continuous metric measurements into discrete integer pixel bins inherently destroys sub-pixel accuracy.
-    \item \textbf{The Compromise:} To invert the projection (map a pixel back to the real world), we must mathematically accept a \textbf{3D direction vector (a ray)} instead of a single point, provide external structural constraints (e.g., assuming the point lies on a known floor plane), and strictly neglect the quantization error (acceptable only for high-resolution sensors).
 \end{itemize}}
+
+To invert the projection (map a pixel back to the real world), we must mathematically accept a \textbf{3D direction vector (a ray)} instead of a single point, provide external structural constraints (e.g., assuming the point lies on a known floor plane), and strictly neglect the quantization error (acceptable only for high-resolution sensors).
