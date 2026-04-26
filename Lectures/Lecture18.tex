@@ -1,1 +1,43 @@
 \lecture{Lecture 18: tbd}
+
+\qa{What is the primary physical limitation of the pure pinhole camera model, and why do real cameras introduce a physical lens?}{
+A pure pinhole camera forces a severe physical trade-off between \textbf{image sharpness and light intensity}. A tiny pinhole creates a perfectly sharp image but lets in almost no light, while a larger pinhole lets in enough light but severely blurs the image.
+
+Introducing a lens solves this by allowing the camera to capture a massive amount of light (large aperture) while actively bending the rays to converge and maintain sharp focus.
+
+Image blur caused by light wave diffraction is dictated by the \textbf{aperture size} (smaller apertures increase diffraction spread), not by the physical thickness of the lens itself. To minimize diffraction, you must use a wider aperture (lower f-number).}
+
+\qa{In the thin lens model, what mathematical condition determines whether an object is in focus, and what geometric phenomenon creates a "circle of confusion"?}{
+\begin{itemize}
+    \item Focus is strictly governed by the \textbf{thin lens equation}:
+    \begin{center}
+        $ \displaystyle \frac{1}{d_0} + \frac{1}{d_1} = \frac{1}{f} $
+    \end{center}
+    where $d_0$ is object distance, $d_1$ is image (sensor) distance, and $f$ is the focal length.
+    \item Only light rays originating from the exact spatial distance $d_0$ will converge perfectly to a single point on the sensor. 
+    \item Light rays from objects at any other distance will converge either in front of or behind the sensor. When these unconverged rays hit the sensor plane, they form a blurred, circular patch of light known as a \textbf{circle of confusion}. Introducing a physical barrier (stopping down the aperture) artificially narrows the light cone, reducing the diameter of this circle and expanding the depth of field.
+\end{itemize}}
+
+\qa{How is radial distortion mathematically modeled and corrected in standard computer vision pipelines (like OpenCV)?}{
+Because the severity of radial distortion is a non-linear function of the radial distance $r$ from the image center, it is analytically approximated using a Taylor series polynomial.
+
+The corrected, ideal pixel coordinates $(x_{corr}, y_{corr})$ are computed from the raw, distorted coordinates $(x, y)$ using derived distortion coefficients ($k_1, k_2, k_3$): 
+\begin{center}
+    $ \displaystyle x_{corr} = x \cdot (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) $ \\[1ex]
+    $ \displaystyle y_{corr} = y \cdot (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) $
+\end{center}
+}
+
+\qa{What is the physical optical mechanism behind chromatic aberration, and how does it manifest in the final image?}{
+Chromatic aberration is caused by \textbf{optical dispersion}. The refractive index of the glass lens is not a constant; it depends on the wavelength of the incoming light. 
+
+As a result, the focal length $f(\lambda)$ varies slightly for different colors (e.g., blue light bends at a steeper angle than red light). This failure to focus all color wavelengths at the exact same convergence point results in noticeable \textbf{color fringes} (unnatural purple or green halos) along high-contrast structural edges, particularly near the outer boundaries of the image.}
+
+\qa{When performing inverse projection (mapping a 2D pixel back to a 3D physical ray) with a non-ideal camera, how must the computational pipeline be sequenced?}{
+\begin{itemize}
+    \item It is a fundamental error to blindly apply the pinhole inverse projection matrix to raw, distorted image pixels. The pipeline must be sequenced in strict reverse:
+    \begin{enumerate}
+        \item \textbf{Compensate for Distortion:} First, apply the polynomial mathematical correction to map the raw, distorted pixel coordinate to its ideal, undistorted coordinate on the virtual image plane.
+        \item \textbf{Apply Inverse Pinhole Matrix:} Only after the point is computationally undistorted can you legitimately apply the idealized thin lens / pinhole camera model to trace the 3D ray back into the real world.
+    \end{enumerate}
+\end{itemize}}
