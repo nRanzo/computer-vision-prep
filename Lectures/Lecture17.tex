@@ -1,23 +1,20 @@
 \lecture{Lecture 17: Pinhole camera model}
 
 \qa{Why does the standard computer vision camera model mathematically place the image plane \textit{in front} of the optical center, deviating from how a physical pinhole camera works?}{
-\begin{itemize}
-    \item A physical pinhole camera captures light rays passing through the aperture, projecting an inverted (upside-down and horizontally flipped) image on the sensor plane located \textit{behind} the focal point.
-    \item Placing a "virtual" image plane at the exact same focal distance $f$ but \textit{in front} of the optical center preserves the identical geometric projection properties (via similar triangles) while mathematically stripping away the negative signs. This completely avoids the upside-down effect, streamlining all subsequent coordinate transformations and matrix algebra.
-\end{itemize}}
+A physical pinhole camera captures light rays passing through the aperture, projecting an inverted (upside-down and horizontally flipped) image on the sensor plane located \textit{behind} the focal point.
+
+Placing a "virtual" image plane at the exact same focal distance $f$ but \textit{in front} of the optical center preserves the identical geometric projection properties (via similar triangles) while mathematically stripping away the negative signs. This completely avoids the upside-down effect, streamlining all subsequent coordinate transformations and matrix algebra.}
 
 \qa{How is the camera's Field of View mathematically defined, and what is the strict physical trade-off required to widen it?}{
-\begin{itemize}
-    \item The maximum viewing angle (FoV) is derived via trigonometry based on the physical dimension of the sensor $d$ (using sensor width for horizontal FoV, or height for vertical FoV) and the focal length $f$:
+The maximum viewing angle (FoV) is derived via trigonometry based on the physical dimension of the sensor $d$ (using sensor width for horizontal FoV, or height for vertical FoV) and the focal length $f$:
     $$ \text{FoV} = 2 \varphi = 2 \arctan\left(\frac{d}{2f}\right) $$
-    \item To capture a wider scene (increase FoV), you must either increase the physical sensor size $d$ (which drastically increases hardware cost and lens complexity) or decrease the focal length $f$ (which reduces optical magnification and often introduces severe non-linear radial distortions, such as the "fish-eye" effect).
-\end{itemize}}
+
+To capture a wider scene (increase FoV), you must either increase the physical sensor size $d$ (which drastically increases hardware cost and lens complexity) or decrease the focal length $f$ (which reduces optical magnification and often introduces severe non-linear radial distortions, such as the "fish-eye" effect).}
 
 \qa{Why are standard Cartesian coordinates insufficient for 3D-to-2D camera modeling, and how do homogeneous coordinates solve this?}{
-\begin{itemize}
-    \item Standard Cartesian representations cannot express the non-linear perspective division (the division by $Z$) as a simple linear matrix multiplication.
-    \item By augmenting the dimensionality of the vectors (e.g., mapping a 3D point to a 4D vector $[X, Y, Z, 1]^T$), homogeneous coordinates allow translations, rotations, and perspective scaling to be unified into a single, continuous linear matrix operation: $\tilde{m} \simeq P \tilde{M}$. The final division is cleanly delayed until the coordinates are converted back from homogeneous to Cartesian space.
-\end{itemize}}
+Standard Cartesian representations cannot express the non-linear perspective division (the division by $Z$) as a simple linear matrix multiplication.
+
+By augmenting the dimensionality of the vectors (e.g., mapping a 3D point to a 4D vector $[X, Y, Z, 1]^T$), homogeneous coordinates allow translations, rotations, and perspective scaling to be unified into a single, continuous linear matrix operation: $\tilde{m} \simeq P \tilde{M}$. The final division is cleanly delayed until the coordinates are converted back from homogeneous to Cartesian space.}
 
 \qa{What is the strict structural distinction between intrinsic and extrinsic camera parameters, and exactly how many degrees of freedom does each control?}{
 \begin{itemize}
@@ -30,14 +27,14 @@
 
 \qa{What are the four distinct reference systems and three sequential transformations that define the complete camera projection pipeline?}{
 \begin{itemize}
-    \item \textbf{Four reference frames (global → sensor):}
+    \item Four reference frames (global → sensor):
     \begin{enumerate}
         \item \textbf{World frame:} Absolute 3D coordinates.
         \item \textbf{Camera frame:} 3D coordinates relative to the camera optical centre (pose given by $T=[R\mid t]$).
         \item \textbf{Image plane (metric):} Continuous 2D coordinates on the projection surface (often modeled as a virtual plane at focal distance $f$).
         \item \textbf{Pixel frame:} Discrete 2D integer coordinates on the digital sensor (origin typically top-left).
     \end{enumerate}
-    \item \textbf{Three sequential transformations:}
+    \item Three sequential transformations:
     \begin{enumerate}
         \item \textbf{World $\to$ Camera (3D $\to$ 3D):} Apply extrinsics $T=[R\mid t]$: $X_c = R\,X_w + t$.
         \item \textbf{Camera $\to$ Image plane (3D $\to$ 2D continuous):} Perspective projection (similar triangles): $(x,y)=\left(\dfrac{fX_c}{Z_c},\dfrac{fY_c}{Z_c}\right)$ (or normalized $(X_c/Z_c,\,Y_c/Z_c)$).
