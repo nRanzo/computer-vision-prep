@@ -1,0 +1,17 @@
+\lecture{Lecture 19: tbd}
+
+\qa{What geometric properties are strictly preserved and which are lost during a standard 3D to 2D perspective projection?}{Perspective projection acts as a dimensionality reduction machine. It preserves collinearity (straight lines) and the cross-ratio for collinear points. However, it loses angles, lengths, and parallelism (e.g., railway tracks converging at a vanishing point).}
+
+\qa{In the hierarchy of geometric transformations, what defines a projective transformation in terms of matrix dimensions and degrees of freedom?}{A 2D projective transformation (homography) is represented by a 3x3 matrix ($\tilde{H}$) and possesses 8 Degrees of Freedom (DoF), as it has 9 entries defined up to scale. Note that 3D projective transforms utilize 4x4 matrices with 15 DoF.}
+
+\qa{Why cannot lengths be trusted in an image acquired via perspective projection?}{Because apparent size scales with inverse depth. The image coordinate is given by $x = fX/Z$, meaning a fixed physical length will project to a smaller 2D length as the distance ($Z$) from the optical center increases. Metric lengths require depth information or calibration to recover.}
+
+\qa{What are the inherent trade-offs when optimizing the aperture size of a purely pinhole camera?}{A smaller hole reduces geometric blur but increases image degradation due to diffraction. Conversely, a larger hole transmits more light but directly increases the circles of confusion. The approximately optimal pinhole diameter balances these effects at $d \approx 1.9\sqrt{f\lambda}$.}
+
+\qa{How does changing the focal length and the camera viewpoint simultaneously to maintain the same subject framing affect perspective?}{This technique alters perspective distortion. A short focal length from close proximity exaggerates depth and distance. A long focal length from further away compresses depth, resulting in less apparent separation between foreground and background elements.}
+
+\qa{Why does a telephoto lens make it easier to isolate a background behind a subject?}{Primarily due to its narrow field-of-view and higher magnification. Because the FOV is narrow, a small angular change in viewpoint can drastically change the framed background. Additionally, for a given aperture and sensor, telephoto lenses produce stronger background blur (shallower DoF), visually separating the subject.}
+
+\qa{How does the thin lens model differ mechanically from a pinhole model regarding depth of field?}{A pinhole provides a very large, near-infinite depth of field, constrained only by diffraction limits. The thin-lens model introduces a variable aperture (iris) and a focusing element, allowing for explicit control over the focal plane and the depth of field.}
+
+\qa{What is the correct mathematical relationship between f-stop values, aperture diameter, and depth of field?}{The f-number ($N$) is the ratio of focal length ($f$) to the aperture diameter ($D$), defined as $N = f/D$. A lower $N$ indicates a larger aperture opening, which results in a shallower depth of field. Note that actual depth of field also heavily depends on focal length, subject distance, and the acceptable circle of confusion.}
