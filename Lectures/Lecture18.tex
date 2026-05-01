@@ -1,31 +1,34 @@
-\lecture{Lecture 18: tbd}
+\lecture{Lecture 18: Thin lens model and image mapping}
 
 \qa{What is the primary physical limitation of the pure pinhole camera model, and why do real cameras introduce a physical lens?}{
 A pure pinhole camera forces a severe physical trade-off between \textbf{image sharpness and light intensity}. A tiny pinhole creates a perfectly sharp image but lets in almost no light, while a larger pinhole lets in enough light but severely blurs the image.
 
 Introducing a lens solves this by allowing the camera to capture a massive amount of light (large aperture) while actively bending the rays to converge and maintain sharp focus.
 
-Image blur caused by light wave diffraction is dictated by the \textbf{aperture size} (smaller apertures increase diffraction spread), not by the physical thickness of the lens itself. To minimize diffraction, you must use a wider aperture (lower f-number).}
+Note: the \textbf{aperture size} dictates the light wave diffraction that causes image blur. Smaller apertures increase diffraction spread and thus image blur; it is not caused by the lens thickness. To reduce diffraction, use a wider aperture (lower f-number).}
 
 \qa{In the thin lens model, what mathematical condition determines whether an object is in focus, and what geometric phenomenon creates a "circle of confusion"?}{
-\begin{itemize}
-    \item Focus is strictly governed by the \textbf{thin lens equation}:
-    \begin{center}
-        $ \displaystyle \frac{1}{d_0} + \frac{1}{d_1} = \frac{1}{f} $
-    \end{center}
-    where $d_0$ is object distance, $d_1$ is image (sensor) distance, and $f$ is the focal length.
-    \item Only light rays originating from the exact spatial distance $d_0$ will converge perfectly to a single point on the sensor. 
-    \item Light rays from objects at any other distance will converge either in front of or behind the sensor. When these unconverged rays hit the sensor plane, they form a blurred, circular patch of light known as a \textbf{circle of confusion}. Introducing a physical barrier (stopping down the aperture) artificially narrows the light cone, reducing the diameter of this circle and expanding the depth of field.
-\end{itemize}}
+Focus is strictly governed by the \textbf{thin lens equation}:
+\begin{center}
+    $ \displaystyle \frac{1}{d_0} + \frac{1}{d_1} = \frac{1}{f} $
+\end{center}
+where $d_0$ is object distance, $d_1$ is image (sensor) distance, and $f$ is the focal length. Only light rays originating from the exact spatial distance $d_0$ will converge perfectly to a single point on the sensor. Light rays from objects at any other distance will converge either in front of or behind the sensor. When these unconverged rays hit the sensor plane, they form a blurred, circular patch of light known as a \textbf{circle of confusion}. Introducing a physical barrier (stopping down the aperture) artificially narrows the light cone, reducing the diameter of this circle and expanding the depth of field.
+
+If the lens focuses light at a plane that does not coincide with the sensor, rays from a single object point will meet either in front or behing the sensor. When these unconveyed rays hit the sensor they form a blurred disk, which diameter grows with the distance between the actual convergence plane and the sensor (and with aperture size).
+}
 
 \qa{How is radial distortion mathematically modeled and corrected in standard computer vision pipelines (like OpenCV)?}{
-Because the severity of radial distortion is a non-linear function of the radial distance $r$ from the image center, it is analytically approximated using a Taylor series polynomial.
 
-The corrected, ideal pixel coordinates $(x_{corr}, y_{corr})$ are computed from the raw, distorted coordinates $(x, y)$ using derived distortion coefficients ($k_1, k_2, k_3$): 
+Radial distortion is modeled as a polinomial in $r^2 = x^2 + y^2$ applied to normalized image coordinates, often augmented with additional tangential distorion terms. This polynomial form arises from a Taylor expansion approximation of the non-linear distortion as a function of the radial distance $r$ from the optical center.
+
+The forward distortion model (ideal $\to$ distorted) is:
 \begin{center}
     $ \displaystyle x_{corr} = x \cdot (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) $ \\[1ex]
     $ \displaystyle y_{corr} = y \cdot (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) $
 \end{center}
+
+(In the full model, tangential distotion with coefficients $p_1, p_2$ is also included.)
+In practice, undistortion (distorted $\to$ ideal) is not obtained by analytically inverting this polynomial. Instead, inverse mapping is used, typically via iterative methods or precomputed lookup maps.
 }
 
 \qa{What is the physical optical mechanism behind chromatic aberration, and how does it manifest in the final image?}{

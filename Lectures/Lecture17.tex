@@ -16,14 +16,32 @@ Standard Cartesian representations cannot express the non-linear perspective div
 
 By augmenting the dimensionality of the vectors (e.g., mapping a 3D point to a 4D vector $[X, Y, Z, 1]^T$), homogeneous coordinates allow translations, rotations, and perspective scaling to be unified into a single, continuous linear matrix operation: $\tilde{m} \simeq P \tilde{M}$. The final division is cleanly delayed until the coordinates are converted back from homogeneous to Cartesian space.}
 
-\qa{What is the strict structural distinction between intrinsic and extrinsic camera parameters, and exactly how many degrees of freedom does each control?}{
-\begin{itemize}
-    \item \textbf{Extrinsic Parameters ($T$):} Define the camera's absolute pose relative to the 3D world origin. This rototranslation matrix contains exactly \textbf{6 parameters} (3 for rotation, 3 for translation). These change continuously if the camera moves through the environment.
-    \item \textbf{Intrinsic Parameters ($K$):} Define the internal optical and digital characteristics of the sensor. There are \textbf{5 raw parameters}: focal length ($f$), pixel width/height scaling factors ($k_u, k_v$), and the pixel coordinates of the principal point ($u_0, v_0$). 
-    \item Mathematically, $f, k_u,$ and $k_v$ merge into just two variables inside the matrix: focal length in pixels ($f_u = f \cdot k_u$ and $f_v = f \cdot k_v$). Thus, assuming zero skew* (standard for modern sensors), the final intrinsic matrix $K$ operates on exactly \textbf{4 internal degrees of freedom} ($f_u, f_v, u_0, v_0$).
-\end{itemize}}
+\qa{Camera model recap (pinhole)}{
+\textbf{Intrinsics} —
+$$K=\begin{bmatrix} f_x & s & c_x \\[4pt] 0 & f_y & c_y \\[4pt] 0 & 0 & 1 \end{bmatrix},$$
+where $f_x,f_y$ are focal lengths in pixels ($f_x=f\cdot\text{px/mm}$), $c_x,c_y$ the principal point, and $s$ the skew ($\approx0$). Lens distortion is not in $K$; common models use radial ($k_1,k_2,k_3$) and tangential ($p_1,p_2$) terms.
 
-*the deviation from rectangularity between the x and y axes of the image sensor or pixel grid
+For a camera-frame point $X_c=[X_c,Y_c,Z_c]^T$ define normalized coords $x=X_c/Z_c,\;y=Y_c/Z_c$ and $r^2=x^2+y^2$. Distorted coords:
+$$
+\begin{aligned}
+x_d&=x(1+k_1r^2+k_2r^4+k_3r^6)+2p_1xy+p_2(r^2+2x^2),\\
+y_d&=y(1+k_1r^2+k_2r^4+k_3r^6)+p_1(r^2+2y^2)+2p_2xy.
+\end{aligned}
+$$
+Pixel coordinates:
+$$u=f_x x_d + s\,y_d + c_x,\qquad v=f_y y_d + c_y.$$
+
+\textbf{Extrinsics} — $X_c=R\,X_w+t$, with $R\in\mathrm{SO}(3),\;t\in\mathbb{R}^3$ (6 DoF).
+
+\textbf{Coordinate conventions} — camera origin at optical centre; $z$ axis forward along optical axis, $x$ to the right, $y$ down (so $x=X_c/Z_c,\;y=Y_c/Z_c$). Pixel frame origin top‑left, $u$ right, $v$ down; $c_x,c_y$ measured in that pixel frame.
+
+\textbf{Projection (compact)} —
+$$\lambda\begin{bmatrix}u\\v\\1\end{bmatrix}=K\,[R\mid t]\begin{bmatrix}X_w\\Y_w\\Z_w\\1\end{bmatrix}.$$
+
+\textbf{Assumptions / notes} — $s\approx0$; often $f_x\approx f_y$ (square pixels); undistort images or include distortion in reprojection; resizing/cropping scales $K$; essential decomposition gives $t$ up to scale.
+
+\textbf{Estimation (brief)} — Intrinsics: Zhang (planar) + BA; Extrinsics: PnP (RANSAC) or essential decomposition; joint: SfM/BA.
+}
 
 \qa{What are the four distinct reference systems and three sequential transformations that define the complete camera projection pipeline?}{
 \begin{itemize}
