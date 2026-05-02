@@ -1,17 +1,41 @@
 \lecture{Lecture 19: tbd}
 
-\qa{What geometric properties are strictly preserved and which are lost during a standard 3D to 2D perspective projection?}{Perspective projection acts as a dimensionality reduction machine. It preserves collinearity (straight lines) and the cross-ratio for collinear points. However, it loses angles, lengths, and parallelism (e.g., railway tracks converging at a vanishing point).}
+\qa{What geometric properties are strictly preserved and which are lost during a standard 3D to 2D perspective projection?}{
+Perspective projection preserves incidence (collinearity of points on a line) and the cross-ratio of collinear points. It maps straight 3D lines to straight lines in the image plane, but does not preserve angles, Euclidean distances, or parallelism; parallel lines in 3D may intersect at vanishing points.
+}
 
-\qa{In the hierarchy of geometric transformations, what defines a projective transformation in terms of matrix dimensions and degrees of freedom?}{A 2D projective transformation (homography) is represented by a 3x3 matrix ($\tilde{H}$) and possesses 8 Degrees of Freedom (DoF), as it has 9 entries defined up to scale. Note that 3D projective transforms utilize 4x4 matrices with 15 DoF.}
+\qa{In the hierarchy of geometric transformations, what defines a projective transformation in terms of matrix dimensions and degrees of freedom?}{
+A 2D projective transformation (homography) is represented by a $3 \times 3$ matrix $\tilde{H}$ defined up to scale, resulting in 8 degrees of freedom. In 3D, projective transformations are represented by $4 \times 4$ matrices defined up to scale, resulting in 15 degrees of freedom.
+}
 
-\qa{Why cannot lengths be trusted in an image acquired via perspective projection?}{Because apparent size scales with inverse depth. The image coordinate is given by $x = fX/Z$, meaning a fixed physical length will project to a smaller 2D length as the distance ($Z$) from the optical center increases. Metric lengths require depth information or calibration to recover.}
+\qa{Why cannot lengths be trusted in an image acquired via perspective projection?}{
+Because image coordinates scale inversely with depth. Under the pinhole model,
+\[
+x = \frac{fX}{Z},
+\]
+so identical physical lengths project to different image lengths depending on their distance $Z$ from the camera. Recovering metric lengths therefore requires depth information or camera calibration.
+}
 
-\qa{What are the inherent trade-offs when optimizing the aperture size of a purely pinhole camera?}{A smaller hole reduces geometric blur but increases image degradation due to diffraction. Conversely, a larger hole transmits more light but directly increases the circles of confusion. The approximately optimal pinhole diameter balances these effects at $d \approx 1.9\sqrt{f\lambda}$.}
+\qa{What are the inherent trade-offs when optimizing the aperture size of a purely pinhole camera?}{
+A smaller aperture reduces geometric blur but increases diffraction effects. A larger aperture increases light throughput but introduces greater geometric blur (circles of confusion). The optimal pinhole diameter approximately satisfies $d \approx 1.9\sqrt{f\lambda}$, where $\lambda$ is the wavelength of light (e.g., $\lambda \approx 550$ nm for green light).
+}
 
-\qa{How does changing the focal length and the camera viewpoint simultaneously to maintain the same subject framing affect perspective?}{This technique alters perspective distortion. A short focal length from close proximity exaggerates depth and distance. A long focal length from further away compresses depth, resulting in less apparent separation between foreground and background elements.}
+\qa{How does changing the focal length and the camera viewpoint simultaneously to maintain the same subject framing affect perspective?}{
+Maintaining the same framing requires adjusting camera distance when focal length changes. A short focal length combined with a close viewpoint exaggerates depth differences, while a long focal length combined with a distant viewpoint compresses depth, reducing apparent separation between foreground and background structures.
+}
 
-\qa{Why does a telephoto lens make it easier to isolate a background behind a subject?}{Primarily due to its narrow field-of-view and higher magnification. Because the FOV is narrow, a small angular change in viewpoint can drastically change the framed background. Additionally, for a given aperture and sensor, telephoto lenses produce stronger background blur (shallower DoF), visually separating the subject.}
+\qa{Why does a telephoto lens make it easier to isolate a background behind a subject?}{
+Primarily due to increased magnification and a narrower field of view. For a given aperture and sensor size, telephoto lenses also produce a shallower depth of field, which enhances background blur and improves subject-background separation.
+}
 
-\qa{How does the thin lens model differ mechanically from a pinhole model regarding depth of field?}{A pinhole provides a very large, near-infinite depth of field, constrained only by diffraction limits. The thin-lens model introduces a variable aperture (iris) and a focusing element, allowing for explicit control over the focal plane and the depth of field.}
+\qa{How does the thin lens model differ mechanically from a pinhole model regarding depth of field?}{
+A pinhole camera provides an extremely large depth of field, limited mainly by diffraction. The thin-lens model introduces a finite aperture and focusing mechanism, enabling control over the focal plane and therefore the depth of field.
+}
 
-\qa{What is the correct mathematical relationship between f-stop values, aperture diameter, and depth of field?}{The f-number ($N$) is the ratio of focal length ($f$) to the aperture diameter ($D$), defined as $N = f/D$. A lower $N$ indicates a larger aperture opening, which results in a shallower depth of field. Note that actual depth of field also heavily depends on focal length, subject distance, and the acceptable circle of confusion.}
+\qa{What is the correct mathematical relationship between f-stop values, aperture diameter, and depth of field?}{
+The f-number $N$ is defined as
+\[
+N = \frac{f}{D},
+\]
+where $f$ is the focal length and $D$ is the aperture diameter. A lower f-number corresponds to a larger aperture and generally a shallower depth of field. However, depth of field also depends on focal length, subject distance, and the acceptable circle of confusion.
+}
