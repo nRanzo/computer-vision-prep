@@ -1,0 +1,101 @@
+\lecture{Lecture 18: Thin lens model and image mapping}
+
+\qa{What is the primary physical limitation of the pure pinhole camera model, and why do real cameras introduce a physical lens?}{
+A pure pinhole camera forces a severe physical trade-off between \textbf{image sharpness and light intensity}. A tiny pinhole creates a perfectly sharp image but lets in almost no light, while a larger pinhole lets in enough light but severely blurs the image.
+
+Introducing a lens solves this by allowing the camera to capture a massive amount of light (large aperture) while actively bending the rays to converge and maintain sharp focus.
+
+Note: the \textbf{aperture size} dictates the light wave diffraction that causes image blur. Smaller apertures increase diffraction spread and thus image blur; it is not caused by the lens thickness. To reduce diffraction, use a wider aperture (lower f-number).}
+
+\qa{In the thin lens model, what mathematical condition determines whether an object is in focus, and what geometric phenomenon creates a "circle of confusion"?}{
+Focus is strictly governed by the \textbf{thin lens equation}:
+\begin{center}
+    $ \displaystyle \frac{1}{d_0} + \frac{1}{d_1} = \frac{1}{f} $
+\end{center}
+where $d_0$ is object distance, $d_1$ is image (sensor) distance, and $f$ is the focal length. Only light rays originating from the exact spatial distance $d_0$ will converge perfectly to a single point on the sensor. Light rays from objects at any other distance will converge either in front of or behind the sensor. When these unconverged rays hit the sensor plane, they form a blurred, circular patch of light known as a \textbf{circle of confusion}. Introducing a physical barrier (stopping down the aperture) artificially narrows the light cone, reducing the diameter of this circle and expanding the depth of field.
+
+If the lens focuses light at a plane that does not coincide with the sensor, rays from a single object point will meet either in front or behing the sensor. When these unconveyed rays hit the sensor they form a blurred disk, which diameter grows with the distance between the actual convergence plane and the sensor (and with aperture size).
+}
+
+\qa{How is radial distortion mathematically modeled and corrected in standard computer vision pipelines (like OpenCV)?}{
+
+Radial distortion is modeled as a polinomial in $r^2 = x^2 + y^2$ applied to normalized image coordinates, often augmented with additional tangential distorion terms. This polynomial form arises from a Taylor expansion approximation of the non-linear distortion as a function of the radial distance $r$ from the optical center.
+
+The forward distortion model (ideal $\to$ distorted) is:
+\begin{center}
+    $ \displaystyle x_{corr} = x \cdot (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) $ \\[1ex]
+    $ \displaystyle y_{corr} = y \cdot (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) $
+\end{center}
+
+(In the full model, tangential distotion with coefficients $p_1, p_2$ is also included.)
+In practice, undistortion (distorted $\to$ ideal) is not obtained by analytically inverting this polynomial. Instead, inverse mapping is used, typically via iterative methods or precomputed lookup maps.
+}
+
+\qa{What is the physical optical mechanism behind chromatic aberration, and how does it manifest in the final image?}{
+Chromatic aberration is caused by \textbf{optical dispersion}. The refractive index of the glass lens is not a constant; it depends on the wavelength of the incoming light. 
+
+As a result, the focal length $f(\lambda)$ varies slightly for different colors (e.g., blue light bends at a steeper angle than red light). This failure to focus all color wavelengths at the exact same convergence point results in noticeable \textbf{color fringes} (unnatural purple or green halos) along high-contrast structural edges, particularly near the outer boundaries of the image.}
+
+\qa{When performing inverse projection (mapping a 2D pixel back to a 3D physical ray) with a non-ideal camera, how must the computational pipeline be sequenced?}{
+
+Inverse projection operates on undistorted, normalized image coordinates. The correct pipeline is:
+\[
+\text{pixel space} \;\rightarrow\; \text{undistorted pixel space} \;\rightarrow\; \text{normalized coordinates} \;\rightarrow\; \text{3D ray}
+\]
+
+\begin{enumerate}
+    \item \textbf{Undistortion:} Map the observed (distorted) pixel $(u_d, v_d)$ to the undistorted pixel $(u, v)$ using the camera distortion model (radial and tangential).
+    
+    \item \textbf{Normalization / Intrinsics removal:} Convert to normalized image coordinates:
+    \[
+    \begin{bmatrix} x \\ y \\ 1 \end{bmatrix}
+    = K^{-1}
+    \begin{bmatrix} u \\ v \\ 1 \end{bmatrix}
+    \]
+    
+    \item \textbf{Ray construction:} The direction $(x, y, 1)$ defines the 3D ray in camera coordinates; it can be transformed to world coordinates via the extrinsic parameters.
+\end{enumerate}
+
+\textbf{Note:} Do not apply $K^{-1}$ directly to distorted pixels. Undistortion (typically via inverse mapping or lookup tables) must be performed first.
+}
+
+% part 2
+
+\qa{What are the two fundamental steps involved in applying a geometric transformation to an image?}{
+\begin{itemize}
+    \item \textbf{Coordinate transformation:} This mathematical step works on ideal geometrical points, defining exactly how the spatial coordinates change (e.g., $(x', y') = T\{(x, y)\}$).
+    \item \textbf{Mapping / Resampling:} Because digital images are discrete grids, this step goes back to the pixels to determine how to correctly assign actual pixel intensity values to the new discrete grid locations after the geometrical points have been mathematically moved.
+\end{itemize}}
+
+\qa{How do forward mapping and backward (inverse) mapping fundamentally differ in their approach to generating a transformed image?}{
+\begin{itemize}
+    \item \textbf{Forward Mapping:} This is the direct application of the transformation. It maps points from the \textit{source} image grid directly onto the destination grid.
+    \item \textbf{Backward (Inverse) Mapping:} This inverts the process by iterating through every pixel in the \textit{destination} image and mapping it backwards to find its corresponding original location in the source image.
+\end{itemize}}
+
+\qa{Why is inverse mapping preferred over forward mapping when applying geometric transformations to digital images?}{
+
+Since forward mapping (source $\rightarrow$ destination) is continuous but the image grid is discrete, it introduces two issues after discretization:
+\begin{itemize}
+    \item \textbf{Holes:} some destination pixels receive no value because mapped source coordinates do not cover every integer grid location.
+    \item \textbf{Collisions (overwrites):} multiple source pixels can map to the same destination pixel due to rounding of the continuos coordinates, causing loss of information.
+\end{itemize}
+
+These artifacts arise because continous coordinates must be assigned to integer pixel indices.
+
+Inverse mapping (destination $\rightarrow$ source) avoids both issues by iterating over every destination pixel and sampling its corresponding (generally non-integer) location in the source image. This guarantees full coverage and eliminates overwriting by avoiding collisions, with values computed by interpolation (e.g., bilinear or bicubic).
+
+Both issues can be solved also by using advanced forward-mapping schemes: each source pixel is distributed over nearby destination pixels using a kernel, with contributions accumulated and normalized. This is called splatting and is complex and computationally heavier.
+}
+
+\qa{In the context of inverse mapping, why is interpolation necessary and what are some common techniques?}{
+When a destination pixel is mathematically mapped backward, its computed coordinates usually fall between discrete pixel centers in the source image (e.g., floating-point values instead of integers). Interpolation is required to mathematically mix or estimate the pixel intensity values based on the surrounding area in the source image.
+
+Standard interpolation techniques include \textbf{Nearest Neighbor}, \textbf{Bilinear}, and \textbf{Bicubic} interpolation.
+}
+
+\qa{How can Look-Up Tables (LUTs) optimize the geometric mapping process for large datasets or video streams?}{
+If the exact same spatial mapping is applied to a large number of images, it is computationally meaningless to repeatedly evaluate the transformation matrix for every single pixel.
+
+Instead, the exact floating-point source locations for every destination pixel can be precomputed once and saved into a Look-Up Table (typically one map for $X$ coordinates and one map for $Y$ coordinates). The mapping process then becomes an extremely fast memory read operation.
+}
