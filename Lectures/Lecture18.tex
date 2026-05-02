@@ -37,10 +37,66 @@ Chromatic aberration is caused by \textbf{optical dispersion}. The refractive in
 As a result, the focal length $f(\lambda)$ varies slightly for different colors (e.g., blue light bends at a steeper angle than red light). This failure to focus all color wavelengths at the exact same convergence point results in noticeable \textbf{color fringes} (unnatural purple or green halos) along high-contrast structural edges, particularly near the outer boundaries of the image.}
 
 \qa{When performing inverse projection (mapping a 2D pixel back to a 3D physical ray) with a non-ideal camera, how must the computational pipeline be sequenced?}{
+
+Inverse projection operates on undistorted, normalized image coordinates. The correct pipeline is:
+\[
+\text{pixel space} \;\rightarrow\; \text{undistorted pixel space} \;\rightarrow\; \text{normalized coordinates} \;\rightarrow\; \text{3D ray}
+\]
+
+\begin{enumerate}
+    \item \textbf{Undistortion:} Map the observed (distorted) pixel $(u_d, v_d)$ to the undistorted pixel $(u, v)$ using the camera distortion model (radial and tangential).
+    
+    \item \textbf{Normalization / Intrinsics removal:} Convert to normalized image coordinates:
+    \[
+    \begin{bmatrix} x \\ y \\ 1 \end{bmatrix}
+    = K^{-1}
+    \begin{bmatrix} u \\ v \\ 1 \end{bmatrix}
+    \]
+    
+    \item \textbf{Ray construction:} The direction $(x, y, 1)$ defines the 3D ray in camera coordinates; it can be transformed to world coordinates via the extrinsic parameters.
+\end{enumerate}
+
+\textbf{Note:} Do not apply $K^{-1}$ directly to distorted pixels. Undistortion (typically via inverse mapping or lookup tables) must be performed first.
+}
+
+% part 2
+PART2 PART2 PART2 PART2 PART2 PART2 
+
+\qa{What are the two fundamental steps involved in applying a geometric transformation to an image?}{
 \begin{itemize}
-    \item It is a fundamental error to blindly apply the pinhole inverse projection matrix to raw, distorted image pixels. The pipeline must be sequenced in strict reverse:
-    \begin{enumerate}
-        \item \textbf{Compensate for Distortion:} First, apply the polynomial mathematical correction to map the raw, distorted pixel coordinate to its ideal, undistorted coordinate on the virtual image plane.
-        \item \textbf{Apply Inverse Pinhole Matrix:} Only after the point is computationally undistorted can you legitimately apply the idealized thin lens / pinhole camera model to trace the 3D ray back into the real world.
-    \end{enumerate}
+    \item \textbf{Coordinate transformation:} This mathematical step works on ideal geometrical points, defining exactly how the spatial coordinates change (e.g., $(x', y') = T\{(x, y)\}$).
+    \item \textbf{Mapping / Resampling:} Because digital images are discrete grids, this step goes back to the pixels to determine how to correctly assign actual pixel intensity values to the new discrete grid locations after the geometrical points have been mathematically moved.
 \end{itemize}}
+
+\qa{How do forward mapping and backward (inverse) mapping fundamentally differ in their approach to generating a transformed image?}{
+\begin{itemize}
+    \item \textbf{Forward Mapping:} This is the direct application of the transformation. It maps points from the \textit{source} image grid directly onto the destination grid.
+    \item \textbf{Backward (Inverse) Mapping:} This inverts the process by iterating through every pixel in the \textit{destination} image and mapping it backwards to find its corresponding original location in the source image.
+\end{itemize}}
+
+\qa{Why is inverse mapping preferred over forward mapping when applying geometric transformations to digital images?}{
+
+Since forward mapping (source $\rightarrow$ destination) is continuous but the image grid is discrete, it introduces two issues after discretization:
+\begin{itemize}
+    \item \textbf{Holes:} some destination pixels receive no value because mapped source coordinates do not cover every integer grid location.
+    \item \textbf{Collisions (overwrites):} multiple source pixels can map to the same destination pixel due to rounding of the continuos coordinates, causing loss of information.
+\end{itemize}
+
+These artifacts arise because continous coordinates must be assigned to integer pixel indices.
+
+Inverse mapping (destination $\rightarrow$ source) avoids both issues by iterating over every destination pixel and sampling its corresponding (generally non-integer) location in the source image. This guarantees full coverage and eliminates overwriting by avoiding collisions, with values computed by interpolation (e.g., bilinear or bicubic).
+
+Both issues can be solved also by using advanced forward-mapping schemes: each source pixel is distributed over nearby destination pixels using a kernel, with contributions accumulated and normalized. This is called splatting and is complex and computationally heavier.
+}
+
+\qa{In the context of inverse mapping, why is interpolation necessary and what are some common techniques?}{
+When a destination pixel is mathematically mapped backward, its computed coordinates usually fall between discrete pixel centers in the source image (e.g., floating-point values instead of integers). Interpolation is required to mathematically mix or estimate the pixel intensity values based on the surrounding area in the source image.
+
+Standard interpolation techniques include \textbf{Nearest Neighbor}, \textbf{Bilinear}, and \textbf{Bicubic} interpolation.
+}
+
+\qa{How can Look-Up Tables (LUTs) optimize the geometric mapping process for large datasets or video streams?}{
+If the exact same spatial mapping is applied to a large number of images, it is computationally meaningless to repeatedly evaluate the transformation matrix for every single pixel.
+
+Instead, the exact floating-point source locations for every destination pixel can be precomputed once and saved into a Look-Up Table (typically one map for $X$ coordinates and one map for $Y$ coordinates). The mapping process then becomes an extremely fast memory read operation.
+}
