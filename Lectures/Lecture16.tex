@@ -21,7 +21,7 @@ Zero-mean Normalized Cross-Correlation explicitly corrects this:
 $$ \phi(x,y) = \frac{\sum_{u,v \in T} (I(x+u, y+v) - \bar{I}(x,y))(T(u,v) - \bar{T})}{\sigma_I(x,y) \sigma_T} $$
 By subtracting the local window mean ($\bar{I}$) and the template mean ($\bar{T}$), it centers the distributions at zero, canceling out uniform brightness shifts. By dividing by the standard deviations ($\sigma_I, \sigma_T$), it normalizes contrast.
 
-This makes ZNCC stronger to illumination changes when compared with SSD and SAD, but it still might be problematic under particular lightning situations.
+This makes ZNCC stronger to illumination changes when compared with SSD and SAD, but it still might be problematic under particular lighting situations.
 }
 
 \qa{If ZNCC is too computationally expensive, how does a classical cv pipeline physically manipulate the data to cope with illumination, scale, and rotation changes in template matching?}
@@ -41,12 +41,32 @@ Be aware of the trade-off, as while it removes the spatial sliding window, it su
 
 \qa{What is the exact sequence of operations used to compute a Histogram of Oriented Gradients (HOG) descriptor?}
 {\begin{enumerate}
-    \item \textbf{Intensity normalization \& smoothing:} The input image undergoes histogram equalization and smoothing to mitigate global lighting variations and noise.
-    \item \textbf{Calculate edge map:} The spatial gradients are evaluated to extract both the magnitude and the phase (direction) for every pixel.
-    \item \textbf{Evaluate edge histograms (Cells):} The image is divided into $8 \times 8$ non-overlapping cells. For each cell, an edge histogram is compiled to create a \textbf{voting vector} (typically quantizing orientations into 9 bins of $20^\circ$ each, covering $180^\circ$).
-    \item \textbf{Create overlapping blocks:} The individual cells are spatially grouped into larger overlapping regions, typically composed of $2 \times 2$ cells.
-    \item \textbf{Normalize block vectors:} To ensure robustness against local illumination and contrast changes, the voting vectors are mathematically normalized locally over each $2 \times 2$ block, creating a consolidated block vector (e.g., $4 \text{ cells} \times 9 \text{ bins} = 36$ elements).
-    \item \textbf{Serialize block vectors:} All the normalized block vectors are concatenated sequentially (serialized) into a final, single 1D descriptor vector.
+
+\item \textbf{(Optional) Preprocessing / intensity normalization:}
+Convert the image to a suitable intensity representation (typically grayscale).
+Optionally apply mild smoothing or contrast normalization to reduce noise and global illumination effects.
+
+\item \textbf{Gradient computation:}
+Compute spatial gradients (e.g., $g_x, g_y$) to obtain, for each pixel, the \textbf{gradient magnitude} and \textbf{orientation} (phase).
+
+\item \textbf{Cell histograms:}
+Divide the image into small non-overlapping cells (commonly $8 \times 8$ pixels).
+Within each cell, accumulate a histogram of gradient orientations where each pixel casts a vote weighted by its gradient magnitude.
+Orientations are typically quantized into \textbf{9 bins} over $0^\circ$--$180^\circ$ (unsigned gradients).
+
+\item \textbf{Overlapping blocks:}
+Group neighboring cells into larger, spatially overlapping blocks (commonly $2 \times 2$ cells per block).
+
+\item \textbf{Block normalization:}
+Concatenate the histograms within each block and normalize the resulting vector
+(e.g., using $\ell_2$-norm variants such as $\ell_2$-Hys)
+to achieve robustness to local illumination and contrast changes.
+A typical block descriptor has $4$ cells $\times$ $9$ bins $= 36$ elements.
+
+\item \textbf{Feature vector assembly:}
+Concatenate (serialize) all normalized block descriptors into a single final feature vector,
+which is then used by a downstream classifier (e.g., linear SVM).
+
 \end{enumerate}}
 
 \qa{HOG Descriptor Dimensionality Calculation}

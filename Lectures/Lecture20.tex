@@ -1,0 +1,47 @@
+\lecture{Lecture 20: Camera calibration}
+
+\qa{What is the fundamental goal of camera calibration, and how does the requirement for a world coordinate system affect the parameters estimated?}{
+Camera calibration aims to estimate the camera model parameters needed to predict how 3D points project to 2D image pixels.
+
+\textbf{Intrinsic calibration} of a single camera estimates internal parameters of the camera\,+lens system (independent of pose), typically:
+\begin{itemize}
+	\item focal lengths $f_x, f_y$ (in pixels),
+	\item principal point $(c_x,c_y)$,
+	\item skew (often assumed $0$ for modern cameras),
+	\item distortion coefficients (radial and tangential).
+\end{itemize}
+
+\textbf{Extrinsics} (rotation and translation) are always defined \emph{with respect to a chosen reference frame}. If you define a global world coordinate system, you obtain extrinsics in that world frame. If no external world frame is given, you typically choose the calibration target's coordinate system as the reference; the estimated extrinsics are then relative to the target (still valid, but not tied to an absolute world).}
+
+\qa{Beyond simply fixing visual distortions, what are the primary engineering applications that make camera calibration absolutely necessary?}{
+While "dedistortion" (straightening curved lines caused by lenses) is a key visual benefit, calibration is fundamentally required for any form of accurate metric measurement in computer vision. It allows a system to mathematically relate 2D image pixels back to the real 3D world. Examples include estimating 3D physical structures from camera motion, computing depth maps using a stereo camera rig, measuring the true physical dimensions of planar objects, and calculating distances to objects (like determining the distance to a person by leveraging known ground-plane constraints).}
+
+\qa{Why is a checkerboard widely considered the standard geometric pattern for camera calibration?}{
+The calibration process requires an object with a strictly known shape and physical dimensions that can be easily and precisely located within an image. A checkerboard provides a grid of high-contrast, sharply defined squares. The alternating black-and-white intersections act as robust, exact 2D feature points (corners) that computer vision algorithms can detect automatically with sub-pixel accuracy. This provides the reliable, unambiguous coordinate data needed to solve the projection equations.}
+
+\qa{How is the camera calibration process mathematically formulated as an optimization problem?}{
+Calibration is framed as a \textbf{non-linear least squares minimization} problem. Given $N$ images of the pattern and $M$ known 3D corner positions $P_j$ on the calibration target, the algorithm minimizes the \textbf{reprojection error} between measured image points $p_{i,j}$ and projected points produced by the camera model:
+\[
+\min_{K,\,d,\,\{R_i,t_i\}}\; \sum_{i=1}^{N}\sum_{j=1}^{M} \left\|p_{i,j} - \pi\big(K,\,d,\,R_i,\,t_i,\,P_j\big)\right\|^2.
+\]
+Here $K$ are the intrinsic parameters (containing $f_x,f_y,c_x,c_y$ and optionally skew), $d$ the distortion coefficients (radial and tangential), and $(R_i,t_i)$ the extrinsics for image $i$.
+The projection function $\pi(\cdot)$ applies the pinhole projection followed by the distortion model.}
+
+\qa{Why is a "good initial guess" crucial for the calibration optimization process, and how does a planar pattern help achieve it?}{
+The least-squares minimization operates over a massive, highly complex parameter space (intrinsics, extrinsics for every single image, and non-linear distortion coefficients). If the solver starts with arbitrary values, it is highly likely to fail or get stuck in a local minimum. 
+
+By using a strictly \textbf{planar} object (like a flat checkerboard) and temporarily neglecting distortion, the transformation from the 3D object plane to the 2D image plane can be heavily simplified into a \textbf{homography}. Calculating this homography provides a mathematically stable and highly accurate initial guess to safely jump-start the complex non-linear solver.}
+
+\qa{Theoretically, what is the absolute minimum number of checkerboard images required to calibrate the intrinsic parameters, and why is this number insufficient in practice?}{
+For planar calibration methods based on homographies (e.g., Zhang's method), each distinct view provides \textbf{two independent constraints} on the intrinsic parameters.
+
+If you assume a simplified intrinsic matrix with \textbf{4 unknowns} (typically by setting skew $=0$), then \textbf{2 views} can be sufficient \emph{in theory} because $2\times 2=4$ constraints match the unknowns.
+
+In the more general case with \textbf{5 intrinsic unknowns} (including skew, or without additional constraints), you need at least \textbf{3 views} to have $2\times 3=6$ constraints.
+
+This parameter counting also explains why you cannot just count ``intrinsics + extrinsics'' once: extrinsics are \emph{per-image} parameters and are not shared across views.
+
+In practice, the minimum is numerically fragile: noise in corner localization, near-degenerate viewpoints, and lens distortion make the solution unstable. Robust calibration typically uses \textbf{many} images (often 10+), with diverse tilts and positions that cover the full field of view.}
+
+\qa{If a single homography only requires 4 point correspondences to be solved (yielding 8 constraints), why do standard calibration checkerboards feature dozens of intersecting corners?}{
+While only 4 points are mathematically required to define the planar homography itself, real-world lenses are not ideal. The additional dozens of corners spread entirely across the grid provide the dense, spatially distributed data points absolutely necessary to accurately measure and model non-linear \textbf{lens distortion} (both radial and tangential) across the camera's entire optical field of view.}
