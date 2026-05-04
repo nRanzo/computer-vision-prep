@@ -1,7 +1,7 @@
 \lecture{Lecture 19: Real cameras}
 
 \qa{What geometric properties are strictly preserved and which are lost during a standard 3D to 2D perspective projection?}{
-Perspective projection preserves incidence (collinearity of points on a line) and the cross-ratio of collinear points. It maps straight 3D lines to straight lines in the image plane, but does not preserve angles, Euclidean distances, or parallelism; parallel lines in 3D may intersect at vanishing points.
+Perspective projection preserves incidence (collinearity of points on a line) and the cross-ratio of collinear points. It maps straight 3D lines to straight lines in the image plane, but does not preserve angles, Euclidean distances, or parallelism. Projections of parallel 3D lines may intersect in the image at a vanishing point.
 }
 
 \qa{In the hierarchy of geometric transformations, what defines a projective transformation in terms of matrix dimensions and degrees of freedom?}{
@@ -39,3 +39,78 @@ N = \frac{f}{D},
 \]
 where $f$ is the focal length and $D$ is the aperture diameter. A lower f-number corresponds to a larger aperture and generally a shallower depth of field. However, depth of field also depends on focal length, subject distance, and the acceptable circle of confusion.
 }
+
+% image sensors section
+
+\qa{At a fundamental physical level, how do digital camera sensors capture light, and why are they inherently incapable of sensing color on their own?}{
+Digital sensors operate by converting incoming photons into electrons. The photodiodes measure the total energy (the total count of electrons generated) but fundamentally cannot differentiate between the specific wavelengths (photon energy) of the incoming light. Because they strictly measure light intensity regardless of wavelength, base CCD and CMOS sensors are inherently grayscale devices.}
+
+\qa{What are the primary architectural approaches used to extract full color (RGB) information from inherently grayscale sensors?}{
+\begin{itemize}
+    \item \textbf{3-chip color sensors:} These use a trichroic prism to physically split the incident polychromatic ("white") light into its red, green, and blue components. Each color beam is directed to its own dedicated sensor, ensuring every spatial pixel receives full RGB data without any need for interpolation.
+    \item \textbf{Single-chip with filters (Bayer Pattern):} A Color Filter Array (CFA) or mosaic is placed over a single sensor, where each individual pixel is covered by only one color filter (Red, Green, or Blue). Because each pixel only records a single color, this method requires mathematical interpolation to estimate the missing two color channels for each pixel to provide complete color info.
+    \item \textbf{Single-chip with wavelength penetration (Direct Image Sensors):} These exploit the physical property of silicon where different light wavelengths penetrate to different depths. This allows stacked sensors to capture full RGB data at every single pixel location simultaneously.
+\end{itemize}}
+
+\qa{How do direct image sensors (like Foveon) structurally bypass the limitations of the Bayer pattern without requiring the bulky prism optics of a 3-chip system?}{
+Instead of placing a mosaic of color filters side-by-side horizontally (which causes spatial color information loss), direct image sensors stack the color-sensitive photodiodes vertically at each pixel location. This design leverages the physical principle that light penetrates silicon at depths dependent on its wavelength (for example, blue light is absorbed near the surface, while red light penetrates deeper). Because of this vertical stacking, complete RGB information is captured at every single photosite, meaning there is no information loss and entirely eliminating the need for mathematical color interpolation.}
+
+\qa{What structural flaw in traditional image sensors does the Backside Illuminated (BSI) architecture solve, and how does it physically achieve this?}{
+In standard (front-illuminated) sensors, the metal wiring and circuitry are layered physically above the light-sensitive photodiodes. This creates a structural barrier that causes partial obscuration, blocking or reflecting some of the incoming light before it can reach the diode. A BSI sensor flips this architecture, placing the photodiodes directly at the primary light-receiving surface and moving all the metal wiring to the "back" (underneath the diodes). This unobstructed path allows the sensor to capture light much more efficiently, although this backside-illuminated structure is significantly more difficult to manufacture.}
+
+\qa{Are camera sensors strictly limited to rectangular, grid-like arrays of pixels?}{
+No, while rectangular arrays are the standard for capturing static 2D scenes, sensor technologies (both CCD and CMOS) can also be manufactured as "just a line" of pixels. These 1D line-scan sensors are specifically utilized for analyzing moving objects, operating by continuously scanning a scene as it passes the sensor field of view.}
+
+% exposure section
+
+\qa{Given that real physical lenses consist of multiple complex glass elements, why is it still mathematically valid to model them using the idealized pinhole camera model?}{
+Despite the internal complexity of modern lenses (which include multiple focusing, stabilization, and corrective glass elements), the entire optical system is engineered to converge light rays through a single effective optical center. By utilizing an aperture diaphragm within this array, the system effectively mimics the behavior of a pinhole. Therefore, the complex camera can still be geometrically treated as a simple pinhole model where all recorded light rays pass through a single convergence point.}
+
+\qa{Why is a camera's aperture almost universally expressed as an f-number (e.g., f/2.0, f/4) rather than a direct metric measurement of the physical opening diameter (e.g., 25mm)?}{
+The f-number ($N = f/A$) normalizes the light-gathering capability of a lens, making it completely independent of the lens's physical focal length. 
+
+According to the inverse-square law, if you double a lens's focal length ($f$), the projected image becomes twice as large, spreading the same amount of light over four times the sensor area (reducing the light intensity to 1/4). To compensate and gather 4x the light, the physical aperture diameter must also double. By defining the aperture strictly as a ratio ($f/N$), any two lenses set to the exact same f-number will deliver the exact same exposure intensity to the sensor, regardless of their physical size.}
+
+\qa{What is the fundamental difference between a global electronic shutter and a rolling shutter, and what specific visual artifact does a rolling shutter introduce?}{
+\begin{itemize}
+    \item \textbf{Global Shutter:} Captures the entire image sensor simultaneously, recording every single pixel at the exact same fraction of a second.
+    \item \textbf{Rolling Shutter:} Scans and captures the image sequentially, typically row-by-row from top to bottom.
+    \item \textbf{Visual Artifact:} Because different rows of the sensor are recorded at slightly different chronological moments, rapidly moving objects (such as a spinning airplane propeller or a fast-moving car) will appear geometrically warped, stretched, or skewed in the final image.
+\end{itemize}}
+
+\qa{What is the principle of reciprocity in camera exposure, and how does it mathematically dictate the relationship between aperture and shutter speed?}{
+Reciprocity dictates that the total amount of light exposing the sensor is proportional to the product of the aperture area and the exposure time. 
+
+Standard f-stops progress by a factor of $\sqrt{2}$ (which exactly halves or doubles the physical area of the opening), while shutter speeds progress by a factor of 2 (halving or doubling the time). Therefore, they are perfectly inversely proportional. If you halve your shutter speed to freeze motion, you must exactly double your aperture area (move down one f-stop) to maintain the exact same total light exposure.}
+
+\qa{When relying on the reciprocity principle to maintain a constant exposure, what are the primary visual and functional trade-offs when manipulating shutter speed?}{
+\begin{itemize}
+    \item \textbf{Fast Shutter Speed (e.g., 1/1000s):} Functionally freezes fast-moving action (like a running person or a moving train) without blur. The trade-off is that it allows very little time for light to enter, requiring a much larger aperture to compensate.
+    \item \textbf{Slow Shutter Speed (e.g., 1/15s):} Allows ample light to enter, which is useful in dark environments. The severe trade-off is that any movement from the subject—or even slight shaking of the photographer's hands—during that window will result in heavy motion blur.
+\end{itemize}}
+
+\qa{Since shrinking the aperture reduces the circle of confusion and increases the depth of field, why is it optically counterproductive to simply use the absolute smallest aperture available (e.g., f/22) for maximum sharpness?}{
+While stopping down the aperture initially increases sharpness by expanding the depth of field, pushing it to the physical extreme introduces two major problems:
+\begin{itemize}
+    \item \textbf{Severe Light Loss:} It drastically restricts incoming light, forcing the use of impractically slow shutter speeds or noisy electronic gain (ISO).
+    \item \textbf{Diffraction Degradation:} As light waves squeeze through a microscopic physical opening, they diffract (bend and spread out). This diffraction creates an unavoidable optical blur that fundamentally degrades the overall resolution and sharpness of the image, ultimately negating the benefits of the wide depth of field.
+\end{itemize}}
+
+\qa{What optical phenomenon creates the "starburst" effect around bright point-light sources at very small apertures, and what mechanical feature dictates the specific geometry of the star?}{
+The starburst effect is a direct result of \textbf{light diffraction} occurring against the straight mechanical edges of the aperture blades inside the lens. Because diffraction spreads light more noticeably through smaller openings, the effect only becomes prominent at tightly closed apertures (e.g., f/16 or f/22). 
+
+The geometric shape (the number of rays in the star) is strictly determined by the number of physical aperture blades:
+\begin{itemize}
+    \item An \textbf{even} number of blades (e.g., 6) produces an identical number of visible rays (6 rays). This is because opposite blades are parallel to each other, causing their diffraction spikes to perfectly overlap.
+    \item An \textbf{odd} number of blades (e.g., 7) produces exactly double the number of rays (14 rays) because the opposing diffraction spikes do not share the same axis and cannot overlap.
+\end{itemize}}
+
+% depth of field section
+
+\qa{How does the physical size of the aperture dictate a camera's depth of field, and what role does the "circle of confusion" play in this relationship?}{
+The depth of field (DoF) is the physical range (front-to-back) within a scene that appears acceptably sharp in the final image. While a lens can only achieve perfect, mathematical focus at one exact distance, objects slightly in front of or behind this distance form a blurred spot of light on the sensor known as the circle of confusion. 
+
+\begin{itemize}
+    \item When a \textbf{large aperture} (e.g., f/2) is used, the light rays pass through a wide opening, forming a broad cone. Because of the steep angle of these rays, the circle of confusion grows rapidly for objects outside the precise focus plane. This results in a shallow depth of field where foregrounds and backgrounds become heavily blurred.
+    \item When a \textbf{smaller aperture} (e.g., f/16) is used, it physically blocks the outer light rays, forcing the remaining light into a much narrower cone. This restricts the size of the circle of confusion so that it remains negligibly small over a longer distance. As a result, objects across a much wider range of distances remain visually sharp, effectively increasing the overall depth of field.
+\end{itemize}}
